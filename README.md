@@ -1,16 +1,18 @@
-<p align="center">
-  <img src="images/hero.png" height=250>
-</p>
-
 # Language Model Council: Benchmarking Foundation Models on Highly Subjective Tasks by Consensus
 
 **Justin Zhao<sup>&dagger;</sup>, Flor Miriam Plaza-del-Arco<sup>&Dagger;</sup>, Amanda Cercas Curry<sup>&Dagger;</sup>**
 
 &dagger; Predibase, &Dagger; Bocconi University
 
-Website: https://llm-council.com
-Paper: TODO
-Dataset: https://huggingface.co/datasets/llm-council/emotional_application
+<p align="center">
+  <img src="images/hero.png" height=250 alt="hero">
+</p>
+
+## Quick links
+
+- Website: <https://llm-council.com>
+- Dataset: <https://huggingface.co/datasets/llm-council/emotional_application>
+- Paper: Coming soon.
 
 ## Abstract
 
