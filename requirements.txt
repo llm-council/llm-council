@@ -1,0 +1,10 @@
+python-dotenv
+alive-progress
+pandas
+scikit-learn
+fsspec
+tiktoken
+jsonlines
+datasets
+jupyterlab
+matplotlib
