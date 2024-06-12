@@ -1,10 +1,14 @@
 python-dotenv
 alive-progress
 pandas
-scikit-learn
 fsspec
 tiktoken
 jsonlines
+
+# For analysis
 datasets
 jupyterlab
 matplotlib
+scikit-learn
+choix
+seaborn

@@ -32,6 +32,11 @@ Our results show that the LMC produces rankings that are more separable, robust,
 and less biased than those from any individual LLM judge, and is more consistent
 with a human-established leaderboard compared to other benchmarks.
 
+## Analysis notebooks
+
+In `analysis/`, we provide in-depth jupyter notebooks to reproduce the findings reported in the
+Language Model Council paper.
+
 ## Multi-provider REST-based parallel processing
 
 We provide a unified and configurable batch parallel processing interface designed for interacting with multiple large language model (LLM) service providers through RESTful APIs.
