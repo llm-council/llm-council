@@ -12,7 +12,7 @@
 
 - Website: <https://llm-council.com>
 - Dataset: <https://huggingface.co/datasets/llm-council/emotional_application>
-- Paper: Coming soon.
+- Paper: <https://arxiv.org/abs/2406.08598>
 
 ## Abstract
 
