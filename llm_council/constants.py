@@ -4,6 +4,7 @@ LLM_COUNCIL_MEMBERS = [
     "openai://gpt-4-turbo-2024-04-09",  # gpt-4-turbo
     "openai://gpt-4o-2024-05-13",  # gpt-4-o
     "openai://gpt-4-0613",  # gpt-4
+    "openai://gpt-4o-mini-2024-07-18",  # gpt-4o-mini (new!)
     # Google/Vertex.
     "vertex://gemini-1.0-pro",
     "vertex://gemini-1.5-pro-preview-0409",
