@@ -66,6 +66,10 @@ class BaseService:
     def max_tokens_per_minute(self) -> int:
         return None
 
+    def get_request_prompt(self, request: dict) -> str:
+        """Returns the user prompt in the request body."""
+        raise NotImplementedError
+
     def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
         """Returns the data payload for a given user prompt."""
         raise NotImplementedError
@@ -153,6 +157,9 @@ class OpenAIService(BaseService):
     def max_tokens_per_minute(self) -> int:
         return 290000
 
+    def get_request_prompt(self, request: dict) -> str:
+        return request["messages"][0]["content"]
+
     def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
         if temperature is not None:
             return {
@@ -219,6 +226,9 @@ class AnthropicService(BaseService):
     def is_response_error(self, response) -> bool:
         return "rate-limits" in response["error"].get("message", "").lower()
 
+    def get_request_user_prompt(self, request: dict) -> str:
+        return request["messages"][0]["content"]
+
     def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
         """Returns the data payload for a given user prompt."""
         if temperature is not None:
@@ -282,6 +292,9 @@ class CohereService(BaseService):
     def max_requests_per_unit(self) -> int:
         return 95
 
+    def get_request_prompt(self, request: dict) -> str:
+        return request["message"]
+
     def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
         if temperature is not None:
             return {
@@ -341,6 +354,9 @@ class TogetherService(BaseService):
 
     def max_requests_per_unit(self) -> int:
         return 9
+
+    def get_request_prompt(self, request: dict) -> str:
+        return request["messages"][0]["content"]
 
     def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
         if temperature is not None:
@@ -421,6 +437,9 @@ curl https://api.mistral.ai/v1/chat/completions \
 
     def is_response_error(self, response) -> bool:
         return "rate limit" in response["error"].get("message", "").lower()
+
+    def get_request_prompt(self, request: dict) -> str:
+        return request["messages"][0]["content"]
 
     def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
         if temperature is not None:
@@ -517,6 +536,9 @@ $'{
 
     def max_requests_per_unit(self):
         return self.max_requests_per_minute
+
+    def get_request_prompt(self, request: dict) -> str:
+        return request["contents"][0]["parts"][0]["text"]
 
     def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
         safety_settings = [
