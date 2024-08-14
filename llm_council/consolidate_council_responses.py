@@ -70,6 +70,10 @@ def consolidate_council_responses(
                             response_data
                         )
 
+                        request_prompt = council_service.get_llm_request_prompt(
+                            response_data
+                        )
+
                         # Enforce a word limit.
                         if word_limit:
                             llm_responder_to_num_words[llm_responder].append(
@@ -101,8 +105,10 @@ def consolidate_council_responses(
                         council_service.get_llm_response_query_info(response_data)
                     )
                     del metadata["llm"]
+                    metadata["user_prompt"] = request_prompt
                     row = {
                         "id": metadata["completion_request"]["id"],
+                        "user_prompt": request_prompt,
                         "llm_responder": llm_responder,
                         "response_string": response_string,
                         "metadata": metadata,
