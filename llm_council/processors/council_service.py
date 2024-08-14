@@ -53,6 +53,12 @@ class CouncilService:
             processor_response[2]
         )
 
+    def get_llm_request_prompt(self, processor_request: dict):
+        llm = processor_request[0]["llm"]
+        return self.council_llm_to_service_map[llm].get_request_prompt(
+            processor_request[1]
+        )
+
     def get_llm_response_query_info(self, processor_response: dict):
         llm = processor_response[0]["llm"]  # Comes from the processor.
         return self.council_llm_to_service_map[llm].get_response_info(
