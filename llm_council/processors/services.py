@@ -9,6 +9,7 @@ The Council Service consists of multiple LLMs, which are attended by their own S
 
 import dotenv
 import os
+from llm_council.structured_outputs import STRUCTURED_OUTPUT_REGISTRY
 
 
 dotenv.load_dotenv()
@@ -70,7 +71,9 @@ class BaseService:
         """Returns the user prompt in the request body."""
         raise NotImplementedError
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema: dict | None
+    ) -> dict:
         """Returns the data payload for a given user prompt."""
         raise NotImplementedError
 
@@ -160,18 +163,27 @@ class OpenAIService(BaseService):
     def get_request_prompt(self, request: dict) -> str:
         return request["messages"][0]["content"]
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
+    ) -> dict:
+        request = {
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": user_prompt}],
+        }
         if temperature is not None:
-            return {
-                "model": self.model_name,
-                "messages": [{"role": "user", "content": user_prompt}],
-                "temperature": temperature,
+            request["temperature"] = temperature
+        if schema_name is not None:
+            schema_class = STRUCTURED_OUTPUT_REGISTRY.get(schema_name)
+            if schema_class is None:
+                raise ValueError(f"Invalid schema: {schema_name}")
+            request["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "schema": schema_class.schema(),
+                },
             }
-        else:
-            return {
-                "model": self.model_name,
-                "messages": [{"role": "user", "content": user_prompt}],
-            }
+        return request
 
     def get_response_string(self, json_response: dict) -> str:
         return json_response["choices"][0]["message"]["content"]
@@ -229,8 +241,14 @@ class AnthropicService(BaseService):
     def get_request_user_prompt(self, request: dict) -> str:
         return request["messages"][0]["content"]
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
+    ) -> dict:
         """Returns the data payload for a given user prompt."""
+        if schema_name is not None:
+            logging.warning(
+                f"Anthropic does not support structured output. Skipping schema: {schema_name}."
+            )
         if temperature is not None:
             return {
                 "model": self.model_name,
@@ -295,7 +313,13 @@ class CohereService(BaseService):
     def get_request_prompt(self, request: dict) -> str:
         return request["message"]
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
+    ) -> dict:
+        if schema_name is not None:
+            logging.warning(
+                f"Cohere does not support structured output. Skipping schema: {schema_name}."
+            )
         if temperature is not None:
             return {
                 "model": self.model_name,
@@ -358,7 +382,13 @@ class TogetherService(BaseService):
     def get_request_prompt(self, request: dict) -> str:
         return request["messages"][0]["content"]
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
+    ) -> dict:
+        if schema_name is not None:
+            logging.warning(
+                f"Together does not support structured output. Skipping schema: {schema_name}."
+            )
         if temperature is not None:
             return {
                 "model": self.model_name,
@@ -441,7 +471,13 @@ curl https://api.mistral.ai/v1/chat/completions \
     def get_request_prompt(self, request: dict) -> str:
         return request["messages"][0]["content"]
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
+    ) -> dict:
+        if schema_name is not None:
+            logging.warning(
+                f"Mistral does not support structured output. Skipping schema: {schema_name}."
+            )
         if temperature is not None:
             return {
                 "model": self.model_name,
@@ -540,7 +576,13 @@ $'{
     def get_request_prompt(self, request: dict) -> str:
         return request["contents"][0]["parts"][0]["text"]
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema: str | None
+    ) -> dict:
+        if schema_name is not None:
+            logging.warning(
+                f"Vertex does not support structured output. Skipping schema: {schema_name}."
+            )
         safety_settings = [
             {
                 "category": "HARM_CATEGORY_HARASSMENT",
