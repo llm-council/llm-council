@@ -121,9 +121,6 @@ class BaseService:
         reset_file(self.get_requests_path(outdir))
         reset_file(self.get_responses_path(outdir))
 
-    def get_request_prompt(self, request: dict) -> str:
-        return NotImplementedError
-
 
 class OpenAIService(BaseService):
     """https://platform.openai.com/docs/api-reference/making-requests"""
@@ -195,9 +192,6 @@ class OpenAIService(BaseService):
             "id": json_response["id"],
             "usage": json_response["usage"],
         }
-
-    def get_request_prompt(self, request: dict) -> str:
-        return request["messages"][0]["content"]
 
 
 class AnthropicService(BaseService):
@@ -345,9 +339,6 @@ class CohereService(BaseService):
             "meta": json_response["meta"],
         }
 
-    def get_request_prompt(self, request: dict) -> str:
-        return request["message"]
-
 
 class TogetherService(BaseService):
     """https://docs.together.ai/reference/chat-completions"""
@@ -412,9 +403,6 @@ class TogetherService(BaseService):
             "usage": json_response["usage"],
             "model": json_response["model"],
         }
-
-    def get_request_prompt(self, request: dict) -> str:
-        return request["messages"][0]["content"]
 
 
 class MistralService(BaseService):
@@ -502,9 +490,6 @@ curl https://api.mistral.ai/v1/chat/completions \
             "id": json_response["id"],
             "usage": json_response["usage"],
         }
-
-    def get_request_prompt(self, request: dict) -> str:
-        return request["messages"][0]["content"]
 
 
 class VertexService(BaseService):
@@ -645,9 +630,6 @@ $'{
             "model_name": self.model_name,
             "usage": json_response["usageMetadata"],
         }
-
-    def get_request_prompt(self, request: dict) -> str:
-        return request["contents"][0]["parts"][0]["text"]
 
 
 PROVIDER_REGISTRY = {
