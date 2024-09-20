@@ -7,23 +7,18 @@ To maximize throughput, parallel requests need to be throttled to stay under rat
 
 This script parallelizes requests to a serverless endpoint while throttling to stay under rate limits.
 """
-
-from llm_council.processors.services import BaseService
-from llm_council.utils.jsonl_io import append_to_jsonl
-
-import requests as rq
-import os
 import aiohttp
-import argparse
 import asyncio
 import json
 import logging
-import os
-import re
-import time
-from dataclasses import dataclass, field
-import dotenv
+import requests as rq
 import tiktoken
+import time
+
+from dataclasses import dataclass, field
+
+from llm_council.processors.services.base_service import BaseService
+from llm_council.utils.jsonl_io import append_to_jsonl
 
 
 def num_tokens_consumed_from_request(

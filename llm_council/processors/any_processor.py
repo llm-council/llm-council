@@ -1,18 +1,15 @@
-import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import logging
-import json
-import time
 import asyncio
-from collections import defaultdict
-from pprint import pprint
-
-import dotenv
 import jsonlines
+import logging
+import os
+import time
+
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from llm_council.processors import generic_processor
 from llm_council.utils import jsonl_io
-from llm_council.processors.services import PROVIDER_REGISTRY
+from llm_council.processors.services.utils import PROVIDER_REGISTRY
 
 
 def get_llm(request_file):
