@@ -2,7 +2,7 @@ import dotenv
 import os
 import logging
 
-from llm_council.processors.services import BaseService
+from llm_council.processors.services.base_service import BaseService
 
 dotenv.load_dotenv()
 

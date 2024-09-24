@@ -4,8 +4,6 @@ import json
 import os
 import glob
 
-from llm_council.processors.services import PROVIDER_REGISTRY
-
 
 def append_to_jsonl(data, filename: str) -> None:
     """Append a json payload to the end of a jsonl file."""

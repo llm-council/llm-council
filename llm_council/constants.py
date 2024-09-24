@@ -28,4 +28,8 @@ LLM_COUNCIL_MEMBERS = [
     # Cohere.
     "cohere://command-r-plus",
     "cohere://command-r",
+    # Lepton.
+    "lepton://llama-3-1-8b",
+    "lepton://llama-3-1-405b",
+    "lepton://llama-3-1-170b",
 ]

@@ -9,7 +9,6 @@ The Council Service consists of multiple LLMs, which are attended by their own S
 import dotenv
 import os
 
-from llm_council.structured_outputs import STRUCTURED_OUTPUT_REGISTRY
 from llm_council.processors.services.utils import get_model_name, get_provider_name, reset_file
 
 
@@ -51,7 +50,7 @@ class BaseService:
         raise NotImplementedError
 
     def get_request_body(
-        self, user_prompt: str, temperature: float | None, schema: dict | None
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
     ) -> dict:
         """Returns the data payload for a given user prompt."""
         raise NotImplementedError

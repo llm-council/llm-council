@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from llm_council.processors import generic_processor
 from llm_council.utils import jsonl_io
-from llm_council.processors.services.utils import PROVIDER_REGISTRY
+from llm_council.processors.services import PROVIDER_REGISTRY
 
 
 def get_llm(request_file):
