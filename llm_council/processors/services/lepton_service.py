@@ -26,7 +26,7 @@ class LeptonService(BaseService):
     def __init__(self, llm) -> None:
         BaseService.__init__(self, llm)
         self.model_name = llm.split("://")[1]
-        self.max_requests_per_minute = 10
+        self.max_requests_per_minute = 1e3
 
     def __api_key(self):
         return os.getenv("LEPTON_API_KEY")
@@ -54,7 +54,7 @@ class LeptonService(BaseService):
         return self.max_requests_per_minute
 
     def max_tokens_per_minute(self) -> int:
-        return 290000
+        return 290000  # number for openai, lepton does not have a max token limitation.
 
     def get_request_prompt(self, request: dict) -> str:
         return request["messages"][0]["content"]
