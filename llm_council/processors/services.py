@@ -72,7 +72,7 @@ class BaseService:
         raise NotImplementedError
 
     def get_request_body(
-        self, user_prompt: str, temperature: float | None, schema: dict | None
+        self, user_prompt: str, temperature: float | None, schema_name: dict | None
     ) -> dict:
         """Returns the data payload for a given user prompt."""
         raise NotImplementedError
@@ -128,10 +128,19 @@ class OpenAIService(BaseService):
     def __init__(self, llm) -> None:
         BaseService.__init__(self, llm)
 
-        if "gpt-3.5-turbo" in llm:
-            self.max_requests_per_minute = 3500
-        elif "gpt-4" in llm:
-            self.max_requests_per_minute = 5000
+        if "gpt-4o-mini" in llm:
+            self.max_requests_per_minute = 30000
+        elif "gpt-4o" in llm:
+            self.max_requests_per_minute = 10000
+        elif "o1-preview" in llm:
+            self.max_requests_per_minute = 500
+        elif "o1-mini" in llm:
+            self.max_requests_per_minute = 1000
+        else:
+            logging.warning(
+                f"Unknown model for OpenAI Service: {llm}. Using default rate limit of 10K RPM."
+            )
+            self.max_requests_per_minute = 10000
 
     def __api_key(self) -> str:
         return os.getenv("OPENAI_API_KEY")
@@ -499,9 +508,9 @@ class VertexService(BaseService):
 
 curl \
 -X POST \
--H "Authorization: Bearer ya29.c.c0AY_VpZgol7hlkNF1q3_Y4xWsqNZucPP6iKOh7YYIqTtowymP-QgL0RTtiYpcWgq-XRU0U96ri4Bm0yI-7Ru2jZwq_c9MTNPrU-DORXQ1CbObqlbxwqTHCvxmXb1uiO1InlTlPQeXSs0EZoo-CAyyRF08l0_NUrNDwXWwXq5FTJOrBqegMYLRhLl2EjHemi5r21FuiJElHly4Fo0Jc3bFkyuP9oR0Bl0m6-6_mP07zShHYbLZx5VIafBOsFY45RByHqC4Z5t4XN_z1fJU8zme0D4HUK8HqT_cgFZKeV_EcXgWoKCB7woXgRnedSk_kdlq3rv9GLIjBqgIy15O1zESY1t0wYAROPVFUYFqHCY76XCiyh_2Cf5M-4Fa8NOX_7SpSfARrt3l36XqyL3ptFTNFxURhCqwkXtGomb9uklKEG0V9I5v66qRzLv1YaUzJ0ZJ6Zh8ZzFGDXyB0e1ZSFT_1YUfn98cf7uhUuBxZwZ7sGHG8k8fJ1ZWVoyBU2dMTOPQQnZOms0ILn8AX0jsKam3c3XNYcBoMcWnRJlCAzdgCOInmjwxMm1ElAkkoatNzfr8TW5e99C5PFiHzPIAy4bkB5Z25FDbI8fy9P27-hXew7ljKoyI_PnXiXrOhbHVldAbjwyQL_P4PCE_ouW_g5lhvuc3WwLSL8EfDgG683PQJyXg4oSx2RrrFQ0FpVpY8SBwdwBW6mnQU56c4B4ihUmlxImXnVdYS7eqcFi1tWQVsogcY-ungjyWZeuYIRkO2oIzfsaSOaFXsR6JBc_FvqYOvV86mf35QqfcziRbv0-l0hhZIkB6sbUIt-Wlkupexs4654mitpk-tu4mWcevMY80aZlR_-evtdglbY3j6fBu_eQuy-7x1yU5009ha_WBOnXRWw0R2XI2Y0zZktm1aIIJjmBYZmakabO04yV9tqBImOqnwX12sXJqcIkkzWB4jtwVrIxcyOvhwUoqmoelc4Qb5bbXmjuI0-UlkMBIry0imkO-FaVepwU_6d1" \
+-H "Authorization: Bearer ya29.a0AcM612x8pWzLSlmukD_j524NBX3uoLgmi80tI7tVGdBQuVBYojEqiBgtJViZ0e4i135ILGE0FWAKPypbULyf3mzONKrWMfQ6Ihw15sfbglz1Q18JubeTw4hecunk0Zg4B6iXnu2ZGvHL_0LfXbBI6vy3lPC09Y5Pjj1RQXXST69ZMFCUUMAMiQpCrT2awn5Aa9XJDVJ2PEGTjQto_Stl9T1wn4bN0QDUjUw4NU0VvpR3ZTJib9AWhZB4cKGMyyd_apPca4MmdoErLy5crLZgCZrRtrUe0HDhQTcTGFl2WEh7SxsZ5xVWY90p2Ay5MHqRw6-5XRc2iGN5EOBKb8X_QY5USy8_7c8aaE5Dahd3nuv6g4X8EJlP7Y68mTQh7cZDrd5qh4Gd3J4EQkL5Acmeau2kK_Qn-xFLtEMaCgYKARESARISFQHGX2MiqCWM09LEuZ4lkj4xXLk0TQ0426" \
 -H "Content-Type: application/json" \
-https://us-central1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0562904075/locations/us-central1/publishers/google/models/gemini-1.0-pro:generateContent -d \
+https://us-central1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0562904075/locations/us-central1/publishers/google/models/gemini-1.5-flash-001:generateContent -d \
 $'{
   "contents": [
     {
@@ -562,7 +571,7 @@ $'{
         return request["contents"][0]["parts"][0]["text"]
 
     def get_request_body(
-        self, user_prompt: str, temperature: float | None, schema: str | None
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
     ) -> dict:
         if schema_name is not None:
             logging.warning(
@@ -632,6 +641,95 @@ $'{
         }
 
 
+# Sample curl command.
+# curl --location 'https://api.cerebras.ai/v1/chat/completions' \
+# --header 'Content-Type: application/json' \
+# --header "Authorization: Bearer CEREBRAS_API_KEY" \
+# --data '{
+#   "model": "llama3.1-8b",
+#   "stream": false,
+#   "messages": [{"content": "Hello!", "role": "user"}],
+#   "temperature": 0,
+#   "max_tokens": -1,
+#   "seed": 0,
+#   "top_p": 1
+# }'
+class CerebrasService(BaseService):
+    """https://api.cerebras.ai/v1/chat/completions"""
+
+    def __init__(self, llm) -> None:
+        BaseService.__init__(self, llm)
+        self.model_name = llm.split("://")[1]
+
+    def __api_key(self) -> str:
+        # https://cloud.cerebras.ai/platform/org_jve6rktvv63hfne69t6h8nwe/apikeys
+        return os.getenv("CEREBRAS_API_KEY")
+
+    def request_url(self) -> str:
+        return "https://api.cerebras.ai/v1/chat/completions"
+
+    def request_header(self) -> dict:
+        return {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.__api_key()}",
+        }
+
+    def sample_request(self) -> dict:
+        return {
+            "model": "llama3.1-8b",
+            "stream": False,
+            "messages": [{"content": "Say hello!", "role": "user"}],
+            "temperature": 0,
+            "max_tokens": -1,
+            "seed": 0,
+            "top_p": 1,
+        }
+
+    def rate_limit_time_unit(self) -> str:
+        return "minute"
+
+    def max_requests_per_unit(self) -> int:
+        return 60
+
+    def get_request_prompt(self, request: dict) -> str:
+        return request["messages"][0]["content"]
+
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
+    ) -> dict:
+        if schema_name is not None:
+            logging.warning(
+                f"Cerebras does not support structured output. Skipping schema: {schema_name}."
+            )
+        if temperature is not None:
+            return {
+                "model": self.model_name,
+                "stream": False,
+                "messages": [{"content": user_prompt, "role": "user"}],
+                "temperature": temperature,
+                "max_tokens": -1,
+            }
+
+        return {
+            "model": self.model_name,
+            "stream": False,
+            "messages": [{"content": user_prompt, "role": "user"}],
+            "temperature": 0,
+            "max_tokens": -1,
+        }
+
+    def get_response_string(self, json_response: dict) -> str:
+        return json_response["choices"][0]["message"]["content"]
+
+    def get_response_info(self, json_response: dict) -> dict:
+        return {
+            "llm": self.llm,
+            "model_name": self.model_name,
+            "id": json_response["id"],
+            "usage": json_response["usage"],
+        }
+
+
 PROVIDER_REGISTRY = {
     "vertex": VertexService,
     "mistral": MistralService,
@@ -639,6 +737,7 @@ PROVIDER_REGISTRY = {
     "cohere": CohereService,
     "anthropic": AnthropicService,
     "openai": OpenAIService,
+    "cerebras": CerebrasService,
 }
 
 
