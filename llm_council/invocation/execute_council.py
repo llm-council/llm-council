@@ -2,14 +2,13 @@
 import argparse
 import time
 
-
 from llm_council.utils import jsonl_io
 from llm_council.processors.any_processor import run_processors_for_request_files
 
 
-def execute(requests_dir: str) -> None:
+def execute(requests_dir: str, models: list[str] = []) -> None:
     start_time = time.time()
-    request_files = jsonl_io.find_request_files(requests_dir)
+    request_files = jsonl_io.find_request_files(requests_dir, models)
     run_processors_for_request_files(request_files, requests_dir)
     end_time = time.time()
 
