@@ -74,7 +74,7 @@ async def process_api_requests_from_file(
         print(e)
         print("Saying hello failed, exiting.")
         raise
-
+    
     # initialize trackers
     queue_of_requests_to_retry = asyncio.Queue()
     task_id_generator = (

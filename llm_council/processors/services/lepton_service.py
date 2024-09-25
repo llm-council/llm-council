@@ -43,9 +43,7 @@ class LeptonService(BaseService):
     def sample_request(self):
         return {
             "model": self.model_name,
-            "messages": [
-                {"role": "user", "content": "Say hello!"},
-            ],
+            "messages": [{"role": "user", "content": "Say hello!"}],
             "temperature": 0.7
         }
 
@@ -55,8 +53,11 @@ class LeptonService(BaseService):
     def max_requests_per_unit(self):
         return self.max_requests_per_minute
 
+    def max_tokens_per_minute(self) -> int:
+        return 290000
+
     def get_request_prompt(self, request: dict) -> str:
-        return request["contents"][0]["parts"][0]["text"]
+        return request["messages"][0]["content"]
 
     def get_request_body(
         self, user_prompt: str, temperature: float | None, schema_name: str | None
@@ -71,10 +72,10 @@ class LeptonService(BaseService):
             schema_class = STRUCTURED_OUTPUT_REGISTRY.get(schema_name)
             if schema_class is None:
                 raise ValueError(f"Invalid schema: {schema_name}")
-            request["tools"] = {
+            request["tools"] = [{
                 "type": "function", 
                 "function": tool.get_tools_spec(schema_class.method)
-            }
+            }]
 
         return request
 

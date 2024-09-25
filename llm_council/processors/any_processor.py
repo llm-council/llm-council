@@ -140,22 +140,22 @@ def run_processors_for_request_files(request_files: list[str], directory: str):
                 f"""\N{Party Popper} Finished collecting for {request_file}. \N{Party Popper}"""
             )
 
-    with alive_bar() as _:
-        # Use ThreadPoolExecutor to run tasks in parallel
-        with ThreadPoolExecutor() as executor:
-            # Dictionary to hold future tasks
-            futures = [
-                executor.submit(process_file, request_files_group)
-                for request_files_group in request_files_grouped_by_provider.values()
-            ]
-            # Wait for all futures to complete
-            for future in as_completed(futures):
-                try:
-                    future.result()  # Retrieve the result to catch any exceptions
-                except Exception as exc:
-                    print(
-                        f"An exception was encountered while running a request file group: {exc}"
-                    )
+    # with alive_bar() as _:
+    # Use ThreadPoolExecutor to run tasks in parallel
+    with ThreadPoolExecutor() as executor:
+        # Dictionary to hold future tasks
+        futures = [
+            executor.submit(process_file, request_files_group)
+            for request_files_group in request_files_grouped_by_provider.values()
+        ]
+        # Wait for all futures to complete
+        for future in as_completed(futures):
+            try:
+                future.result()  # Retrieve the result to catch any exceptions
+            except Exception as exc:
+                print(
+                    f"An exception was encountered while running a request file group: {exc}"
+                )
 
 
 def get_confirmation():
