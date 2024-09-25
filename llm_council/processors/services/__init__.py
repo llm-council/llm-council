@@ -1,12 +1,13 @@
 from . import utils as utils
-from . import base_service 
-from . import anthropic_service 
-from . import cohere_service 
-from . import lepton_service 
-from . import mistral_service 
-from . import openai_service 
-from . import together_service 
-from . import vertex_service 
+from . import base_service
+from . import anthropic_service
+from . import cohere_service
+from . import lepton_service
+from . import mistral_service
+from . import openai_service
+from . import together_service
+from . import vertex_service
+from . import lepton_service
 
 BaseService = base_service.BaseService
 AnthropicService = anthropic_service.AnthropicService
@@ -16,6 +17,7 @@ MistralService = mistral_service.MistralService
 OpenAIService = openai_service.OpenAIService
 TogetherService = together_service.TogetherService
 VertexService = vertex_service.VertexService
+LeptonService = lepton_service.LeptonService
 
 PROVIDER_REGISTRY = {
     "anthropic": AnthropicService,
@@ -24,5 +26,6 @@ PROVIDER_REGISTRY = {
     "lepton": LeptonService,
     "openai": OpenAIService,
     "together": TogetherService,
-    "vertex": VertexService
+    "vertex": VertexService,
+    "lepton": LeptonService,
 }

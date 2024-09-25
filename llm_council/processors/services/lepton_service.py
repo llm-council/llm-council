@@ -44,7 +44,7 @@ class LeptonService(BaseService):
         return {
             "model": self.model_name,
             "messages": [{"role": "user", "content": "Say hello!"}],
-            "temperature": 0.7
+            "temperature": 0.7,
         }
 
     def rate_limit_time_unit(self):
@@ -72,18 +72,26 @@ class LeptonService(BaseService):
             schema_class = STRUCTURED_OUTPUT_REGISTRY.get(schema_name)
             if schema_class is None:
                 raise ValueError(f"Invalid schema: {schema_name}")
-            request["tools"] = [{
-                "type": "function", 
-                "function": tool.get_tools_spec(schema_class.method)
-            }]
+            request["tools"] = [
+                {
+                    "type": "function",
+                    "function": tool.get_tools_spec(schema_class.method),
+                }
+            ]
 
         return request
 
     def is_response_error(self, response) -> bool:
-        return "quota exceeded" in response["error"].get("message", "").lower()
+        # Sometimes the response is an error message.
+        # {
+        #     "object": "error",
+        #     "message": "[Errno 104] Connection reset by peer",
+        #     "code": 50001
+        # },
+        return response["object"] == "error"
 
     def get_response_string(self, json_response: dict) -> str:
-        return json_response["candidates"][0]["content"]["parts"][0]["text"]
+        return json_response["choices"][0]["message"]["content"]
 
     def get_response_info(self, json_response: dict) -> dict:
         return {

@@ -184,6 +184,8 @@ def get_serverless_provider(llm: str):
         return "cohere"
     if llm.startswith("vertex://"):
         return "vertex"
+    if llm.startswith("lepton://"):
+        return "lepton"
     raise ValueError(f"Unknown serverless LLM provder: '{llm}.")
 
 

@@ -1,4 +1,8 @@
-"""Script that takes in a JSONL file with bad responses, and reissues the requests to the LLMs that generated the bad responses."""
+"""Script that takes in a JSONL file with bad responses, and reissues the requests to the LLMs that generated the bad responses.
+
+python llm_council/invocation/rerun_bad_responses.py \
+    --bad_responses_jsonl_file data_mmlu_lepton_100/mmlu_pro.n100.lepton.run2/so_jgt_cot1.reasoning_then_answer.temp1.student/lepton/llama3-1-8b/responses.jsonl
+"""
 
 import argparse
 from llm_council.processors.any_processor import rerun_bad_responses
