@@ -2,19 +2,16 @@
 import argparse
 import time
 
-from alive_progress import alive_bar
 
 from llm_council.utils import jsonl_io
 from llm_council.processors.any_processor import run_processors_for_request_files
 
 
 def execute(requests_dir: str) -> None:
-    
-    with alive_bar() as _:
-        start_time = time.time()
-        request_files = jsonl_io.find_request_files(requests_dir)
-        run_processors_for_request_files(request_files, requests_dir)
-        end_time = time.time()
+    start_time = time.time()
+    request_files = jsonl_io.find_request_files(requests_dir)
+    run_processors_for_request_files(request_files, requests_dir)
+    end_time = time.time()
 
     print(f"Execution took {(end_time - start_time):.2f} seconds.")
 
