@@ -7,6 +7,7 @@ To maximize throughput, parallel requests need to be throttled to stay under rat
 
 This script parallelizes requests to a serverless endpoint while throttling to stay under rate limits.
 """
+
 import aiohttp
 import asyncio
 import json
@@ -74,7 +75,7 @@ async def process_api_requests_from_file(
         print(e)
         print("Saying hello failed, exiting.")
         raise
-    
+
     # initialize trackers
     queue_of_requests_to_retry = asyncio.Queue()
     task_id_generator = (
@@ -276,12 +277,20 @@ class APIRequest:
                 )
                 status_tracker.num_api_errors += 1
                 error = response
+                # Provider-specific errors.
                 if service_config.is_response_error(response):
                     status_tracker.time_of_last_rate_limit_error = time.time()
                     status_tracker.num_rate_limit_errors += 1
                     status_tracker.num_api_errors -= (
                         1  # rate limit errors are counted separately
                     )
+            elif service_config.is_response_error(response):
+                error = response
+                # status_tracker.time_of_last_rate_limit_error = time.time()
+                # status_tracker.num_rate_limit_errors += 1
+                status_tracker.num_api_errors -= (
+                    1  # rate limit errors are counted separately
+                )
 
         except (
             Exception
