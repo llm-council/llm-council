@@ -4,7 +4,7 @@ import logging
 import os
 import time
 
-from alive_progress import alive_bar
+from alive_progress import alive_it
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -140,13 +140,12 @@ def run_processors_for_request_files(request_files: list[str], directory: str):
                 f"""\N{Party Popper} Finished collecting for {request_file}. \N{Party Popper}"""
             )
 
-    # with alive_bar() as _:
     # Use ThreadPoolExecutor to run tasks in parallel
     with ThreadPoolExecutor() as executor:
         # Dictionary to hold future tasks
         futures = [
             executor.submit(process_file, request_files_group)
-            for request_files_group in request_files_grouped_by_provider.values()
+            for request_files_group in alive_it(request_files_grouped_by_provider.values())
         ]
         # Wait for all futures to complete
         for future in as_completed(futures):
@@ -184,8 +183,6 @@ def get_serverless_provider(llm: str):
         return "cohere"
     if llm.startswith("vertex://"):
         return "vertex"
-    if llm.startswith("lepton://"):
-        return "lepton"
     raise ValueError(f"Unknown serverless LLM provder: '{llm}.")
 
 
