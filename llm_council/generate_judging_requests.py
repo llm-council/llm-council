@@ -68,9 +68,10 @@ def generate_requests_for_dsxs_judging(
                 ]["context"]
             else:
                 # context = "synthetic"
-                context = id_to_llm_responder_to_metadata_dict[id][llm][
-                    "completion_request"
-                ]["response_string"]
+                # context = id_to_llm_responder_to_metadata_dict[id][llm][
+                #     "completion_request"
+                # ]["response_string"]
+                context = id_to_llm_responder_to_metadata_dict[id][llm]["user_prompt"]
             all_pairs.append(
                 {
                     "first_completion": id_to_llm_responder_to_response_string_dict[id][

@@ -9,7 +9,12 @@ from llm_council.processors.any_processor import run_processors_for_request_file
 class CouncilService:
     """A service that manages the council members and their services."""
 
-    def __init__(self, llm_council_members: list[str], outdir: str | None = None):
+    def __init__(
+        self,
+        llm_council_members: list[str],
+        outdir: str | None = None,
+        reset_outdir: bool | None = True,
+    ):
         self.llm_council_members = llm_council_members
         self.outdir = outdir
 
@@ -17,7 +22,7 @@ class CouncilService:
             llm: get_service_for_llm(llm) for llm in llm_council_members
         }
 
-        if outdir:
+        if reset_outdir:
             self.reset_request_files_for_council(outdir)
 
     def _add_request_to_llm_services(

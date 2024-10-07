@@ -26,7 +26,6 @@ def issue_single_prompt(prompt_file: str, llm: str):
         llm_council_members=[llm],
         outdir=os.path.dirname(args.prompt_file),
     )
-    # council_service.reset_request_files_for_council()
 
     council_service.write_council_request(realized_prompt, {}, None, None)
 
