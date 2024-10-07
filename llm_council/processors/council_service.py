@@ -1,6 +1,7 @@
-from llm_council.processors.services import get_service_for_llm, BaseService
-from llm_council.utils.jsonl_io import append_to_jsonl
 from llm_council.constants import LLM_COUNCIL_MEMBERS
+from llm_council.processors.services import BaseService
+from llm_council.processors.services.utils import get_service_for_llm
+from llm_council.utils.jsonl_io import append_to_jsonl
 
 from llm_council.processors.any_processor import run_processors_for_request_files
 

@@ -1,14 +1,12 @@
-import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import logging
-import json
-import time
 import asyncio
-from collections import defaultdict
-from pprint import pprint
-
-import dotenv
 import jsonlines
+import logging
+import os
+import time
+
+from alive_progress import alive_it
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from llm_council.processors import generic_processor
 from llm_council.utils import jsonl_io
@@ -147,7 +145,7 @@ def run_processors_for_request_files(request_files: list[str], directory: str):
         # Dictionary to hold future tasks
         futures = [
             executor.submit(process_file, request_files_group)
-            for request_files_group in request_files_grouped_by_provider.values()
+            for request_files_group in alive_it(request_files_grouped_by_provider.values())
         ]
         # Wait for all futures to complete
         for future in as_completed(futures):

@@ -4,7 +4,7 @@ import json
 import os
 import glob
 
-from llm_council.processors.services import PROVIDER_REGISTRY
+from llm_council.processors.services.utils import get_provider_name, get_model_name
 
 
 def append_to_jsonl(data, filename: str) -> None:
@@ -21,7 +21,7 @@ def reset_file(filename: str) -> None:
         os.remove(filename)
 
 
-def find_request_files(base_dir: str) -> list[str]:
+def find_request_files(base_dir: str, models: list[str]) -> list[str]:
     """
     Searches recursively for all files named 'requests.jsonl' in the given directory.
 
@@ -32,9 +32,15 @@ def find_request_files(base_dir: str) -> list[str]:
     list[str]: A list of full paths to each 'requests.jsonl' file found.
     """
     # Create the pattern to search for
-    pattern = "**/requests.jsonl"
+    if not models:
+        pattern = "**/requests.jsonl"
+        file_paths = glob.glob(os.path.join(base_dir, pattern), recursive=True)
+    else:
+        file_paths = []
+        for model in models:
+            pattern = f"**/{get_provider_name(model)}/{get_model_name(model)}/requests.jsonl"
+            file_paths.extend(glob.glob(os.path.join(base_dir, pattern), recursive=True))
     # Use glob to find all paths that match the pattern, recursively
-    file_paths = glob.glob(os.path.join(base_dir, pattern), recursive=True)
     return file_paths
 
 

@@ -6,17 +6,10 @@ python llm_council/invocation/issue_single_prompt.py \
 """
 
 import argparse
-import jsonlines
 import os
-import random
-import sys
-import time
 from llm_council.processors.council_service import CouncilService
 
 from llm_council.utils import jsonl_io
-from llm_council.processors.any_processor import (
-    run_processor_for_request_file,
-)
 
 
 def issue_single_prompt(prompt_file: str, llm: str):

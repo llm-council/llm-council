@@ -1,21 +1,41 @@
 from pydantic import BaseModel
+from typing import Annotated, Dict, Type
 
 
-class ReasoningThenAnswer(BaseModel):
+class BaseSchema(BaseModel):
+
+    @staticmethod
+    def method(*args, **kwargs):
+        pass
+
+
+class ReasoningThenAnswer(BaseSchema):
     reasoning: str
     answer: str
 
+    @staticmethod
+    def method(reasoning: Annotated[str, ""], answer: Annotated[str, ""]):
+        pass
 
-class AnswerThenReasoning(BaseModel):
+
+class AnswerThenReasoning(BaseSchema):
     answer: str
     reasoning: str
 
+    @staticmethod
+    def method(answer: Annotated[str, ""], reaonsing: Annotated[str, ""]):
+        pass
 
-class AnswerOnly(BaseModel):
+
+class AnswerOnly(BaseSchema):
     answer: str
 
+    @staticmethod
+    def method(answer: Annotated[str, ""]):
+        pass
 
-STRUCTURED_OUTPUT_REGISTRY = {
+
+STRUCTURED_OUTPUT_REGISTRY: Dict[str, Type[BaseSchema]] = {
     "reasoning_then_answer": ReasoningThenAnswer,
     "answer_then_reasoning": AnswerThenReasoning,
     "answer_only": AnswerOnly,

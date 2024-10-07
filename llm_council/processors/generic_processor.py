@@ -8,22 +8,18 @@ To maximize throughput, parallel requests need to be throttled to stay under rat
 This script parallelizes requests to a serverless endpoint while throttling to stay under rate limits.
 """
 
-from llm_council.processors.services import BaseService
-from llm_council.utils.jsonl_io import append_to_jsonl
-
-import requests as rq
-import os
 import aiohttp
-import argparse
 import asyncio
 import json
 import logging
-import os
-import re
-import time
-from dataclasses import dataclass, field
-import dotenv
+import requests as rq
 import tiktoken
+import time
+
+from dataclasses import dataclass, field
+
+from llm_council.processors.services.base_service import BaseService
+from llm_council.utils.jsonl_io import append_to_jsonl
 
 
 def num_tokens_consumed_from_request(
@@ -281,12 +277,20 @@ class APIRequest:
                 )
                 status_tracker.num_api_errors += 1
                 error = response
+                # Provider-specific errors.
                 if service_config.is_response_error(response):
                     status_tracker.time_of_last_rate_limit_error = time.time()
                     status_tracker.num_rate_limit_errors += 1
                     status_tracker.num_api_errors -= (
                         1  # rate limit errors are counted separately
                     )
+            elif service_config.is_response_error(response):
+                error = response
+                # status_tracker.time_of_last_rate_limit_error = time.time()
+                # status_tracker.num_rate_limit_errors += 1
+                status_tracker.num_api_errors -= (
+                    1  # rate limit errors are counted separately
+                )
 
         except (
             Exception
