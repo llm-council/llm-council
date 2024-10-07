@@ -11,10 +11,19 @@ class OpenAIService(BaseService):
     def __init__(self, llm) -> None:
         BaseService.__init__(self, llm)
 
-        if "gpt-3.5-turbo" in llm:
-            self.max_requests_per_minute = 3500
-        elif "gpt-4" in llm:
-            self.max_requests_per_minute = 5000
+        if "gpt-4o-mini" in llm:
+            self.max_requests_per_minute = 30000
+        elif "gpt-4o" in llm:
+            self.max_requests_per_minute = 10000
+        elif "o1-preview" in llm:
+            self.max_requests_per_minute = 500
+        elif "o1-mini" in llm:
+            self.max_requests_per_minute = 1000
+        else:
+            logging.warning(
+                f"Unknown model for OpenAI Service: {llm}. Using default rate limit of 10K RPM."
+            )
+            self.max_requests_per_minute = 10000
 
     def __api_key(self) -> str | None:
         return os.getenv("OPENAI_API_KEY")
@@ -27,7 +36,7 @@ class OpenAIService(BaseService):
 
     def sample_request(self) -> dict:
         return {
-            "model": "gpt-3.5-turbo-0613",
+            "model": "gpt-4o-mini",
             "messages": [{"role": "user", "content": "Say hello!"}],
         }
 
