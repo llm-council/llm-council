@@ -14,9 +14,9 @@ class VertexService(BaseService):
 
 curl \
 -X POST \
--H "Authorization: Bearer ya29.c.c0AY_VpZgol7hlkNF1q3_Y4xWsqNZucPP6iKOh7YYIqTtowymP-QgL0RTtiYpcWgq-XRU0U96ri4Bm0yI-7Ru2jZwq_c9MTNPrU-DORXQ1CbObqlbxwqTHCvxmXb1uiO1InlTlPQeXSs0EZoo-CAyyRF08l0_NUrNDwXWwXq5FTJOrBqegMYLRhLl2EjHemi5r21FuiJElHly4Fo0Jc3bFkyuP9oR0Bl0m6-6_mP07zShHYbLZx5VIafBOsFY45RByHqC4Z5t4XN_z1fJU8zme0D4HUK8HqT_cgFZKeV_EcXgWoKCB7woXgRnedSk_kdlq3rv9GLIjBqgIy15O1zESY1t0wYAROPVFUYFqHCY76XCiyh_2Cf5M-4Fa8NOX_7SpSfARrt3l36XqyL3ptFTNFxURhCqwkXtGomb9uklKEG0V9I5v66qRzLv1YaUzJ0ZJ6Zh8ZzFGDXyB0e1ZSFT_1YUfn98cf7uhUuBxZwZ7sGHG8k8fJ1ZWVoyBU2dMTOPQQnZOms0ILn8AX0jsKam3c3XNYcBoMcWnRJlCAzdgCOInmjwxMm1ElAkkoatNzfr8TW5e99C5PFiHzPIAy4bkB5Z25FDbI8fy9P27-hXew7ljKoyI_PnXiXrOhbHVldAbjwyQL_P4PCE_ouW_g5lhvuc3WwLSL8EfDgG683PQJyXg4oSx2RrrFQ0FpVpY8SBwdwBW6mnQU56c4B4ihUmlxImXnVdYS7eqcFi1tWQVsogcY-ungjyWZeuYIRkO2oIzfsaSOaFXsR6JBc_FvqYOvV86mf35QqfcziRbv0-l0hhZIkB6sbUIt-Wlkupexs4654mitpk-tu4mWcevMY80aZlR_-evtdglbY3j6fBu_eQuy-7x1yU5009ha_WBOnXRWw0R2XI2Y0zZktm1aIIJjmBYZmakabO04yV9tqBImOqnwX12sXJqcIkkzWB4jtwVrIxcyOvhwUoqmoelc4Qb5bbXmjuI0-UlkMBIry0imkO-FaVepwU_6d1" \
+-H "Authorization: Bearer $VERTEX_API_KEY" \
 -H "Content-Type: application/json" \
-https://us-central1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0562904075/locations/us-central1/publishers/google/models/gemini-1.0-pro:generateContent -d \
+https://us-central1-aiplatform.googleapis.com/v1/projects/gen-lang-client-0562904075/locations/us-central1/publishers/google/models/gemini-1.5-flash-001:generateContent -d \
 $'{
   "contents": [
     {
