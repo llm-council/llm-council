@@ -11,6 +11,7 @@ from datasets import load_dataset
 import itertools
 import random
 from itertools import combinations
+import pickle as pkl
 
 
 def calculate_non_overlapping_percentage(
@@ -460,13 +461,22 @@ dataset = load_dataset("llm-council/emotional_application", "response_judging")
 df = dataset["council"].to_pandas()
 
 # Example of one jury ablation, without any adversarial judges.
-jury_ablation_stats = get_jury_ablation_stats(
-    df=df,
-    unique_council_members=df["llm_judge"].unique(),
-    num_trials=100,
-    num_adversarial_judges=None,
-    num_adversarial_judges_frac=None,
-    adversarial_method=None,
-    reference_llm_completer="qwen1.5-32B-Chat",
-    num_emobench_ids=10,  # Ablate here.
-)
+
+# Ablate over number of emobench ids.
+all_jury_ablation_stats = []
+for num_emobench_ids in tqdm(range(10, 101, 10), desc="Processing Ablation Trials"):
+    jury_ablation_stats = get_jury_ablation_stats(
+        df=df,
+        unique_council_members=df["llm_judge"].unique(),
+        num_trials=100,
+        num_adversarial_judges=None,
+        num_adversarial_judges_frac=None,
+        adversarial_method=None,
+        reference_llm_completer="qwen1.5-32B-Chat",
+        num_emobench_ids=num_emobench_ids,
+    )
+    all_jury_ablation_stats.append(jury_ablation_stats)
+
+
+with open("all_ablation_data.pkl", "wb") as fp:
+    pkl.dump(all_jury_ablation_stats, fp)
