@@ -11,6 +11,7 @@ from datasets import load_dataset
 import itertools
 import random
 from itertools import combinations
+import pickle as pkl
 
 
 def calculate_non_overlapping_percentage(
@@ -476,8 +477,6 @@ for num_emobench_ids in tqdm(range(10, 101, 10), desc="Processing Ablation Trial
     )
     all_jury_ablation_stats.append(jury_ablation_stats)
 
-
-import pickle as pkl
 
 with open("all_ablation_data.pkl", "wb") as fp:
     pkl.dump(all_jury_ablation_stats, fp)

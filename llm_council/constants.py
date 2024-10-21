@@ -40,4 +40,8 @@ LLM_COUNCIL_MEMBERS = [
     "lepton://llama3-1-405b",
     "lepton://llama3-2-3b",
     "lepton://qwen2-72b"
+    # Cerebras.
+    # https://inference-docs.cerebras.ai/introduction
+    "cerebras://llama3.1-8b",
+    "cerebras://llama3.1-70b",
 ]

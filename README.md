@@ -189,11 +189,7 @@ streamlines this.
 
 Done!
 
-### Expanding to more use cases
-
-We are actively working to improve this interface. For now, you will need to change specific files in the repository.
-
-#### Adding a prompt
+### Adding a prompt
 
 Define the prompt in `prompts.py` and add it to the registry `PROMPT_REGISTRY`. Once in the registry, the prompt can be referred to by key in command line arguments, e.g. `--prompt_template_key`.
 
@@ -207,23 +203,42 @@ To add an LLM to the default council, add the LLM to `constants.py`. However, if
 
 For 1-off testing, refer to `issue_single_prompt.py`.
 
-#### Adding a new Provider
+### Adding a new Provider
 
-In `services.py` define a new class that implements the `BaseService` class. For example:
+Under `llm_council/processors/services/`, define a new class that implements the `BaseService` class. For example:
 
 ```python
+import dotenv
+import os
+import logging
+
+from llm_council.processors.services.base_service import BaseService
+
+# Load credentials from a .env file.
+dotenv.load_dotenv()
+
+
 class OpenAIService(BaseService):
     """https://platform.openai.com/docs/api-reference/making-requests"""
 
     def __init__(self, llm) -> None:
         BaseService.__init__(self, llm)
 
-        if "gpt-3.5-turbo" in llm:
-            self.max_requests_per_minute = 3500
-        elif "gpt-4" in llm:
-            self.max_requests_per_minute = 5000
+        if "gpt-4o-mini" in llm:
+            self.max_requests_per_minute = 30000
+        elif "gpt-4o" in llm:
+            self.max_requests_per_minute = 10000
+        elif "o1-preview" in llm:
+            self.max_requests_per_minute = 500
+        elif "o1-mini" in llm:
+            self.max_requests_per_minute = 1000
+        else:
+            logging.warning(
+                f"Unknown model for OpenAI Service: {llm}. Using default rate limit of 10K RPM."
+            )
+            self.max_requests_per_minute = 10000
 
-    def __api_key(self) -> str:
+    def __api_key(self) -> str | None:
         return os.getenv("OPENAI_API_KEY")
 
     def request_url(self) -> str:
@@ -234,7 +249,7 @@ class OpenAIService(BaseService):
 
     def sample_request(self) -> dict:
         return {
-            "model": "gpt-3.5-turbo-0613",
+            "model": "gpt-4o-mini",
             "messages": [{"role": "user", "content": "Say hello!"}],
         }
 
@@ -247,18 +262,30 @@ class OpenAIService(BaseService):
     def max_tokens_per_minute(self) -> int:
         return 290000
 
-    def get_request_body(self, user_prompt: str, temperature: float | None) -> dict:
+    def get_request_prompt(self, request: dict) -> str:
+        return request["messages"][0]["content"]
+
+    def get_request_body(
+        self, user_prompt: str, temperature: float | None, schema_name: str | None
+    ) -> dict:
+        request = {
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": user_prompt}],
+        }
         if temperature is not None:
-            return {
-                "model": self.model_name,
-                "messages": [{"role": "user", "content": user_prompt}],
-                "temperature": temperature,
+            request["temperature"] = temperature
+        if schema_name is not None:
+            schema_class = STRUCTURED_OUTPUT_REGISTRY.get(schema_name)
+            if schema_class is None:
+                raise ValueError(f"Invalid schema: {schema_name}")
+            request["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "schema": schema_class.schema(),
+                },
             }
-        else:
-            return {
-                "model": self.model_name,
-                "messages": [{"role": "user", "content": user_prompt}],
-            }
+        return request
 
     def get_response_string(self, json_response: dict) -> str:
         return json_response["choices"][0]["message"]["content"]
@@ -270,11 +297,56 @@ class OpenAIService(BaseService):
             "id": json_response["id"],
             "usage": json_response["usage"],
         }
-
-    def get_request_prompt(self, request: dict) -> str:
-        return request["messages"][0]["content"]
 ```
 
-Finally, add the service to the `PROVIDER_REGISTRY`.
+Then, import the service and add it to the provider registry in `llm_council/processors/services/__init__.py`
+
+Finally, add valid qualified provider paths to `llm_council/constants.py`, e.g.
+
+```
+"openai://gpt-3.5-turbo-0125",
+"openai://gpt-4-turbo-2024-04-09",
+"openai://gpt-4-0613",  # gpt-4
+"openai://gpt-4o-mini-2024-07-18",
+"openai://gpt-4o-2024-08-06",
+"openai://o1-preview-2024-09-12",
+"openai://o1-mini-2024-09-12",
+```
+
+#### Add a new structured output schema.
+
+Add a dataclass to `llm_council/structured_outputs.py`.
+
+```python
+class ReasoningThenAnswer(BaseSchema):
+    reasoning: str
+    answer: str
+
+    @staticmethod
+    def method(reasoning: Annotated[str, ""], answer: Annotated[str, ""]):
+        pass
+
+
+class AnswerThenReasoning(BaseSchema):
+    answer: str
+    reasoning: str
+
+    @staticmethod
+    def method(answer: Annotated[str, ""], reaonsing: Annotated[str, ""]):
+        pass
+```
+
+NOTE: The `method()` staticmethod is necessary for the Lepton provider as their interface uses an 
+annotated function call to enable constrained decoding.
+
+## Roadmap
+
+Loosely:
+
+- Add additional providers and services as they come into the market.
+- Enable customized per-llm rate limits as different developers may be on different tiers.
+- Simplify how users customize council compositions for completion and judging.
+- Flush out end-to-end interface for executing the council on a single prompt.
+- Add tests.
 
 Happy Council-ing!
