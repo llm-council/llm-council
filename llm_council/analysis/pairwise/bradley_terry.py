@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from llm_council.analysis.visualization import sorted_dict_of_dict
 from llm_council.constants import (
     MAJOR_A_WIN,

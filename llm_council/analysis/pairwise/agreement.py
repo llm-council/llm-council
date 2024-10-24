@@ -10,57 +10,10 @@ from llm_council.constants import (
     TIE,
 )
 from llm_council.analysis.visualization import sorted_dict_of_dict
+from llm_council.analysis.pairwise.pairwise_utils import get_council_choice
 
 
 AGREEMENT_METHODS = ["cohen_kappa", "exact", "sidewise", "sidewise_cohen_kappa"]
-
-
-def get_mean_pooling_choice(agg_list):
-    choice_to_value_map = {
-        MAJOR_A_WIN: 2,
-        MINOR_A_WIN: 1,
-        TIE: 0,
-        MINOR_B_WIN: -1,
-        MAJOR_B_WIN: -2,
-    }
-    value_to_choice_map = {
-        2: MAJOR_A_WIN,
-        1: MINOR_A_WIN,
-        0: TIE,
-        -1: MINOR_B_WIN,
-        -2: MAJOR_B_WIN,
-    }
-    numeric_values = agg_list.apply(lambda x: choice_to_value_map[x])
-    return value_to_choice_map[round(np.mean(numeric_values))]
-
-
-def get_council_choice(df, council_aggregation_method):
-    if council_aggregation_method == "majority":
-        df_aggregated = (
-            df.groupby(["emobench_id", "first_completion_by", "second_completion_by"])
-            .agg(
-                pairwise_choice=pd.NamedAgg(
-                    column="pairwise_choice", aggfunc=lambda x: x.mode()[0]
-                )
-            )
-            .reset_index()
-        )
-        return df_aggregated
-    if council_aggregation_method == "mean_pooling":
-        # Council, by mean pooling.
-        df_aggregated = (
-            df.groupby(["emobench_id", "first_completion_by", "second_completion_by"])
-            .agg(
-                pairwise_choice=pd.NamedAgg(
-                    column="pairwise_choice", aggfunc=get_mean_pooling_choice
-                )
-            )
-            .reset_index()
-        )
-        return df_aggregated
-    raise ValueError(
-        f"Invalid council aggregation method: {council_aggregation_method}"
-    )
 
 
 def get_side(rating):
