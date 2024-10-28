@@ -1,8 +1,8 @@
 # Language Model Council: Benchmarking Foundation Models on Highly Subjective Tasks by Consensus
 
-**Justin Zhao<sup>&dagger;</sup>, Flor Miriam Plaza-del-Arco<sup>&Dagger;</sup>, Amanda Cercas Curry<sup>&Dagger;</sup>**
+**Justin Zhao<sup>&dagger;</sup>, Flor Miriam Plaza-del-Arco<sup>&Dagger;</sup>, Benjie Genchel<sup>&dagger;</sup>, Amanda Cercas Curry<sup>&Dagger;</sup>**
 
-&dagger; Predibase, &Dagger; Bocconi University
+&dagger; Independent, &Dagger; Bocconi University
 
 <p align="center">
   <img src="images/hero.png" height=250 alt="hero">
@@ -16,25 +16,11 @@
 
 ## Abstract
 
-The rapid advancement of Large Language Models (LLMs) necessitates robust
-and challenging benchmarks. Leaderboards like Chatbot Arena rank LLMs based
-on how well their responses align with human preferences. However, many tasks
-such as those related to emotional intelligence, creative writing, or persuasiveness,
-are highly subjective and often lack majoritarian human agreement. Judges may
-have irreconcilable disagreements about what constitutes a better response. To
-address the challenge of ranking LLMs on highly subjective tasks, we propose
-a novel benchmarking framework, the **Language Model Council (LMC)**. The
-LMC operates through a democratic process to: 1) formulate a test set through
-equal participation, 2) administer the test among council members, and 3) evaluate
-responses as a collective jury. We deploy a council of 20 newest LLMs on an
-open-ended emotional intelligence task: responding to interpersonal dilemmas.
-Our results show that the LMC produces rankings that are more separable, robust,
-and less biased than those from any individual LLM judge, and is more consistent
-with a human-established leaderboard compared to other benchmarks.
+As Large Language Models (LLMs) continue to evolve, the search for efficient and meaningful evaluation methods is ongoing. Many recent evaluations use LLMs as judges to score outputs from other LLMs, often relying on a single large model like GPT-4o. However, using a single LLM judge is prone to intra-model bias, and many tasks - such as those related to emotional intelligence, creative writing, and persuasiveness - may be too subjective for a single model to judge fairly. We introduce the Language Model Council (LMC), where a group of LLMs collaborate to create tests, respond to them, and evaluate each other's responses to produce a ranking in a democratic fashion. Unlike previous approaches that focus on reducing cost or bias by using a panel of smaller models, our work examines the benefits and nuances of a fully inclusive LLM evaluation system. In a detailed case study on emotional intelligence, we deploy a council of 20 recent LLMs to rank each other on open-ended responses to interpersonal conflicts. Our results show that the LMC produces rankings that are more separable and more robust, and through a user study, we show that they are more consistent with human evaluations than any individual LLM judge. Using all LLMs for judging can be costly, however, so we use Monte Carlo simulations and hand-curated sub-councils to study hypothetical council compositions and discuss the value of the incremental LLM judge.
 
 ## Analysis notebooks
 
-In `analysis/`, we provide in-depth jupyter notebooks to reproduce the findings reported in the
+In `analysis/`, we provide in-depth jupyter notebooks to reproduce the findings and figures reported in the
 Language Model Council paper.
 
 ## Multi-provider REST-based parallel processing
@@ -68,6 +54,7 @@ TOGETHER_API_KEY = ""
 COHERE_API_KEY = ""
 VERTEX_PROJECT_ID = ""
 VERTEX_API_KEY = ""
+CEREBRAS_API_KEY = ""
 ```
 
 ### Supported providers
@@ -78,6 +65,8 @@ VERTEX_API_KEY = ""
 - [Vertex AI](https://cloud.google.com/vertex-ai/docs/reference/rest)
 - [Cohere](https://docs.cohere.com/reference/chat)
 - [Anthropic](https://docs.anthropic.com/en/api/messages)
+- [Cerebras](https://inference-docs.cerebras.ai/introduction)
+- [Lepton](https://www.lepton.ai/docs/public_models/model_apis)
 
 Providers may have unique constraints on token limits (TPS or TPM), rate lmits (RPS or RPM), or
 both. Providers have slight variations in request/request payloads. Our unified interface
