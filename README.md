@@ -5,7 +5,7 @@
 &dagger; Independent, &Dagger; Bocconi University
 
 <p align="center">
-  <img src="images/hero.png" height=250 alt="hero">
+  <img src="images/hero_2.png" height=250 alt="hero">
 </p>
 
 ## Quick links
