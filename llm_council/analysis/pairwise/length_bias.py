@@ -8,6 +8,7 @@ from llm_council.constants import (
 )
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import os
 from sklearn.linear_model import LinearRegression
 from llm_council.analysis.pairwise.pairwise_utils import get_council_choice
@@ -129,3 +130,77 @@ def get_length_biases_df(judging_df, id_respondent_to_num_words) -> pd.DataFrame
         )
 
     return pd.DataFrame(length_biases)
+
+
+def plot_length_based_outcomes(
+    judging_df, name, id_respondent_to_num_words, show=True, outdir=None
+):
+    """Creates a plot with X and Y axes as the response lengths of the battlers, and the color
+    indicating the result of the battle.
+
+    """
+    # Attach num words to judging_df.
+    attach_num_words_to_judging_df(judging_df, id_respondent_to_num_words)
+
+    # Apply colors.
+    def get_color(row):
+        if row["pairwise_choice"] == MINOR_A_WIN:
+            return "teal"
+        if row["pairwise_choice"] == MINOR_B_WIN:
+            return "orange"
+        if row["pairwise_choice"] == MAJOR_A_WIN:
+            return "blue"
+        if row["pairwise_choice"] == MAJOR_B_WIN:
+            return "red"
+        return "yellow"
+
+    judging_df.loc[:, "color"] = judging_df.apply(get_color, axis=1)
+
+    # Filter out ties, as they cause a lot of noise.
+    filtered_df = judging_df[judging_df["color"] != "yellow"]
+
+    plt.figure(figsize=(10, 10))
+    plt.scatter(
+        filtered_df["second_completion_by_num_words"],  # X-axis data
+        filtered_df["first_completion_by_num_words"],  # Y-axis data
+        color=filtered_df["color"],  # Color by the 'color' column
+        alpha=0.1,  # Set transparency
+    )
+
+    max_value = max(
+        filtered_df["first_completion_by_num_words"].max(),
+        filtered_df["second_completion_by_num_words"].max(),
+    )
+    min_value = min(
+        filtered_df["first_completion_by_num_words"].min(),
+        filtered_df["second_completion_by_num_words"].min(),
+    )
+    plt.plot(
+        [min_value, max_value],
+        [min_value, max_value],
+        "k--",
+        label="Equal # tokens",
+    )  # 'k--' specifies a black dashed line
+
+    plt.title(f"LLM Judge Outcomes ({name})")
+    plt.xlabel("# Words (Respondent B)")
+    plt.ylabel("# Words (Respondent A)")
+    plt.grid(True)
+
+    # Add custom legend for colors
+    legend_handles = [
+        mpatches.Patch(color="blue", label="Major A Win"),
+        mpatches.Patch(color="teal", label="Minor A Win"),
+        mpatches.Patch(color="orange", label="Minor B Win"),
+        mpatches.Patch(color="red", label="Major B Win"),
+    ]
+    plt.legend(handles=legend_handles)
+
+    plt.tight_layout()
+
+    if outdir:
+        plt.savefig(os.path.join(outdir, f"{name}.pdf"))
+
+    if show:
+        plt.show()
+    plt.close()
