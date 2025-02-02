@@ -3,13 +3,15 @@ import os
 
 from leptonai.util import tool
 
-from llm_council.processors.services.base_service import BaseService
+from llm_council.providers.base_provider import BaseProvider
 from llm_council.structured_outputs import STRUCTURED_OUTPUT_REGISTRY
+from llm_council.providers.base_provider import provider
 
 dotenv.load_dotenv()
 
 
-class LeptonService(BaseService):
+@provider(provider_name="lepton", api_key_name="LEPTON_API_KEY")
+class LeptonProvider(BaseProvider):
     """
     sample curl request:
 
@@ -24,7 +26,7 @@ class LeptonService(BaseService):
     """
 
     def __init__(self, llm) -> None:
-        BaseService.__init__(self, llm)
+        BaseProvider.__init__(self, llm)
         self.model_name = llm.split("://")[1]
         self.max_requests_per_minute = 1e3
 

@@ -2,14 +2,16 @@ import dotenv
 import logging
 import os
 
-from llm_council.processors.services.base_service import BaseService
+from llm_council.providers.base_provider import BaseProvider
+from llm_council.providers.base_provider import provider
 
 dotenv.load_dotenv()
 
 
-class VertexService(BaseService):
+@provider(provider_name="vertex", api_key_name="VERTEX_API_KEY")
+class VertexProvider(BaseProvider):
     """https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/gemini?_gl=1*uk6ij0*_ga*MTkwMTgxNzc1MS4xNzE0MDc0OTM4*_ga_WH2QY8WWF5*MTcxNTg0MjkwNS4zOS4xLjE3MTU4NDI5MjguMC4wLjA.&_ga=2.185445036.480671911.1715842905-1901817751.1714074938
-    
+
     Sample curl command.
 
 curl \
@@ -36,7 +38,7 @@ $'{
     """
 
     def __init__(self, llm) -> None:
-        BaseService.__init__(self, llm)
+        BaseProvider.__init__(self, llm)
         self.model_name = llm.split("://")[1]
         self.project_id = os.getenv("VERTEX_PROJECT_ID")
 

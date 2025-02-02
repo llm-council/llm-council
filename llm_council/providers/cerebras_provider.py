@@ -2,7 +2,8 @@ import dotenv
 import os
 import logging
 
-from llm_council.processors.services.base_service import BaseService
+from llm_council.providers.base_provider import BaseProvider
+from llm_council.providers.base_provider import provider
 
 dotenv.load_dotenv()
 
@@ -20,11 +21,12 @@ dotenv.load_dotenv()
 #   "seed": 0,
 #   "top_p": 1
 # }'
-class CerebrasService(BaseService):
+@provider(provider_name="cerebras", api_key_name="CEREBRAS_API_KEY")
+class CerebrasProvider(BaseProvider):
     """https://inference-docs.cerebras.ai/introduction"""
 
     def __init__(self, llm) -> None:
-        BaseService.__init__(self, llm)
+        BaseProvider.__init__(self, llm)
         self.model_name = llm.split("://")[1]
 
     def __api_key(self) -> str:

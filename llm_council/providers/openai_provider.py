@@ -1,15 +1,22 @@
 import logging
 import os
 
-from llm_council.processors.services.base_service import BaseService
+import instructor
+import openai
+from llm_council.providers.base_provider import BaseProvider
 from llm_council.structured_outputs import STRUCTURED_OUTPUT_REGISTRY
+from llm_council.providers.base_provider import provider
 
 
-class OpenAIService(BaseService):
+@provider(provider_name="openai", api_key_name="OPENAI_API_KEY")
+class OpenAIProvider(BaseProvider):
     """https://platform.openai.com/docs/api-reference/making-requests"""
 
     def __init__(self, llm) -> None:
-        BaseService.__init__(self, llm)
+        BaseProvider.__init__(self, llm)
+
+        self.instructor_async_client = instructor.from_openai(openai.AsyncOpenAI())
+        self.async_client = openai.AsyncOpenAI()
 
         if "gpt-4o-mini" in llm:
             self.max_requests_per_minute = 30000
@@ -84,3 +91,48 @@ class OpenAIService(BaseService):
             "id": json_response["id"],
             "usage": json_response["usage"],
         }
+
+    async def get_async_completion_task(
+        self,
+        prompt: str,
+        temperature: float | None = None,
+        schema_name: str | None = None,
+    ):
+        if schema_name is not None:
+            schema_class = STRUCTURED_OUTPUT_REGISTRY.get(schema_name)
+
+            if temperature is None:
+                return await self.instructor_async_client.chat.completions.create_with_completion(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "user", "content": prompt},
+                    ],
+                    response_model=schema_class,
+                )
+            else:
+                return await self.instructor_async_client.chat.completions.create_with_completion(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=temperature,
+                    response_model=schema_class,
+                )
+        else:
+            if temperature is None:
+                response = await self.async_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "user", "content": prompt},
+                    ],
+                )
+                return response.choices[0].message.content, response
+            else:
+                response = await self.async_client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=temperature,
+                )
+                return response.choices[0].message.content, response
