@@ -35,8 +35,18 @@ class AnswerOnly(BaseSchema):
         pass
 
 
+class User(BaseSchema):
+    name: str
+    age: int
+
+    @staticmethod
+    def method(name: Annotated[str, ""], age: Annotated[int, ""]):
+        pass
+
+
 STRUCTURED_OUTPUT_REGISTRY: Dict[str, Type[BaseSchema]] = {
     "reasoning_then_answer": ReasoningThenAnswer,
     "answer_then_reasoning": AnswerThenReasoning,
     "answer_only": AnswerOnly,
+    "test_user": User,
 }
