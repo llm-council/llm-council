@@ -1,8 +1,9 @@
+import jsonlines
+from collections import defaultdict
 from llm_council.constants import LLM_COUNCIL_MEMBERS
-from llm_council.processors.services import BaseService
-from llm_council.processors.services.utils import get_service_for_llm
+from llm_council.providers.base_provider import BaseProvider
+from llm_council.providers.utils import get_service_for_llm
 from llm_council.utils.jsonl_io import append_to_jsonl
-
 from llm_council.processors.any_processor import run_processors_for_request_files
 
 
@@ -27,7 +28,7 @@ class CouncilService:
 
     def _add_request_to_llm_services(
         self,
-        llm_to_service_map: dict[str, BaseService],
+        llm_to_service_map: dict[str, BaseProvider],
         metadata: dict,
         prompt: str,
         temperature: float | None,
@@ -100,9 +101,43 @@ class CouncilService:
             request_paths.add(service.get_requests_path(self.outdir))
         return sorted(list(request_paths))
 
+    def get_response_paths(self):
+        """Returns a map of llm to response path."""
+        llm_to_response_path = {}
+        for service in self.council_llm_to_service_map.values():
+            llm_to_response_path[service.llm] = service.get_responses_path(self.outdir)
+        return llm_to_response_path
+
+    def generate_request(
+        self, prompt, prompt_id, additional_metadata, temperature, schema_name
+    ):
+        metadata = {
+            "completion_request": {
+                "prompt_id": prompt_id,
+                **additional_metadata,
+            }
+        }
+        self.write_council_request(
+            prompt,
+            metadata,
+            temperature,
+            schema_name=schema_name,
+        )
+
     def execute_council(self):
+        """Executes the council and returns a map of LLM to the list of response objects."""
         request_paths = self.get_request_paths()
         run_processors_for_request_files(request_paths, self.outdir)
+
+        # Parse the responses into a structure and return them.
+        llm_to_response_path = self.get_response_paths()
+        print(llm_to_response_path)
+        llm_to_responses = defaultdict(list)
+        for llm, response_path in llm_to_response_path.items():
+            with jsonlines.open(response_path) as reader:
+                for response in reader:
+                    llm_to_responses[llm].append(response)
+        return llm_to_responses
 
 
 def get_default_council_service(outdir: str):
