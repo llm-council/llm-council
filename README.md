@@ -201,7 +201,7 @@ import dotenv
 import os
 import logging
 
-from llm_council.processors.services.base_service import BaseProvider
+from llm_council.providers.base_provider import BaseProvider
 
 # Load credentials from a .env file.
 dotenv.load_dotenv()
