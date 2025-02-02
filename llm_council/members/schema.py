@@ -61,7 +61,7 @@ class ModelInfo(BaseModel):
     # The number of parameters in the model.
     num_parameters: str
 
-    # List of modalities this model supports.
+    # List of modalities this model supports as input.
     modalities: List[Modality]
 
 
