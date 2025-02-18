@@ -11,7 +11,7 @@ import dotenv
 import os
 from functools import wraps
 
-from llm_council.processors.services.utils import (
+from llm_council.providers.utils import (
     get_model_name,
     get_provider_name,
     reset_file,
@@ -125,6 +125,14 @@ class BaseProvider:
         reset_file(self.get_requests_path(outdir))
         reset_file(self.get_responses_path(outdir))
 
-    async def get_async_completion_task(self, prompt, temperature, schema_name):
+    async def get_async_completion_task(
+        self, prompt, task_metadata, temperature, schema_name, schema_class
+    ):
         # raise NotImplementedError
         pass
+
+
+def get_provider_instance_for_llm(llm: str, allowed_providers=None):
+    """Returns an instantiated service class for a given fully qualified LLM name."""
+    provider_name = get_provider_name(llm, allowed_providers)
+    return PROVIDER_REGISTRY[provider_name]["class"](llm)

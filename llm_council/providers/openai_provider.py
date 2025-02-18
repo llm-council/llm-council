@@ -1,3 +1,4 @@
+import dotenv
 import logging
 import os
 
@@ -6,6 +7,14 @@ import openai
 from llm_council.providers.base_provider import BaseProvider
 from llm_council.structured_outputs import STRUCTURED_OUTPUT_REGISTRY
 from llm_council.providers.base_provider import provider
+from llm_council.judging.schema import EvaluationConfig, create_dynamic_schema
+from llm_council.providers.utils import (
+    get_schema_class,
+    check_prompt_template_contains_all_placeholders,
+)
+import importlib
+
+dotenv.load_dotenv()
 
 
 @provider(provider_name="openai", api_key_name="OPENAI_API_KEY")
@@ -15,8 +24,8 @@ class OpenAIProvider(BaseProvider):
     def __init__(self, llm) -> None:
         BaseProvider.__init__(self, llm)
 
-        self.instructor_async_client = instructor.from_openai(openai.AsyncOpenAI())
         self.async_client = openai.AsyncOpenAI()
+        self.instructor_async_client = instructor.from_openai(self.async_client)
 
         if "gpt-4o-mini" in llm:
             self.max_requests_per_minute = 30000
@@ -95,22 +104,22 @@ class OpenAIProvider(BaseProvider):
     async def get_async_completion_task(
         self,
         prompt: str,
+        task_metadata: dict,
         temperature: float | None = None,
-        schema_name: str | None = None,
+        schema_class_path: str | None = None,
+        schema_class: type | None = None,
     ):
-        if schema_name is not None:
-            schema_class = STRUCTURED_OUTPUT_REGISTRY.get(schema_name)
+        """Perhaps this could also be shared across providers, as long as async_client and instructor_async_client are set.
 
-            if temperature is None:
-                return await self.instructor_async_client.chat.completions.create_with_completion(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "user", "content": prompt},
-                    ],
-                    response_model=schema_class,
-                )
-            else:
-                return await self.instructor_async_client.chat.completions.create_with_completion(
+        Default temperature is 1, and can be simply None:
+            https://platform.openai.com/docs/api-reference/chat/create#chat-create-temperature
+        """
+        if schema_class_path is not None:
+            schema_class = get_schema_class(schema_class_path)
+
+        if schema_class is not None:
+            structured_output, completion = (
+                await self.instructor_async_client.chat.completions.create_with_completion(
                     model=self.model_name,
                     messages=[
                         {"role": "user", "content": prompt},
@@ -118,21 +127,22 @@ class OpenAIProvider(BaseProvider):
                     temperature=temperature,
                     response_model=schema_class,
                 )
+            )
+            return {
+                "task_metadata": task_metadata,
+                "structured_output": structured_output,
+                "completion": completion,
+            }
         else:
-            if temperature is None:
-                response = await self.async_client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "user", "content": prompt},
-                    ],
-                )
-                return response.choices[0].message.content, response
-            else:
-                response = await self.async_client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "user", "content": prompt},
-                    ],
-                    temperature=temperature,
-                )
-                return response.choices[0].message.content, response
+            completion = await self.async_client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=temperature,
+            )
+            return {
+                "task_metadata": task_metadata,
+                "completion_text": completion.choices[0].message.content,
+                "completion": completion,
+            }

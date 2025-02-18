@@ -2,7 +2,7 @@ import jsonlines
 from collections import defaultdict
 from llm_council.constants import LLM_COUNCIL_MEMBERS
 from llm_council.providers.base_provider import BaseProvider
-from llm_council.providers.utils import get_service_for_llm
+from llm_council.providers.base_provider import get_provider_instance_for_llm
 from llm_council.utils.jsonl_io import append_to_jsonl
 from llm_council.processors.any_processor import run_processors_for_request_files
 
@@ -20,7 +20,7 @@ class CouncilService:
         self.outdir = outdir
 
         self.council_llm_to_service_map = {
-            llm: get_service_for_llm(llm) for llm in llm_council_members
+            llm: get_provider_instance_for_llm(llm) for llm in llm_council_members
         }
 
         if reset_outdir:

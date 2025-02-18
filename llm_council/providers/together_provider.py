@@ -1,9 +1,13 @@
 import dotenv
 import os
 import logging
+import openai
+import instructor
 
 from llm_council.providers.base_provider import BaseProvider
 from llm_council.providers.base_provider import provider
+from llm_council.structured_outputs import STRUCTURED_OUTPUT_REGISTRY
+from llm_council.providers.utils import get_schema_class
 
 dotenv.load_dotenv()
 
@@ -14,6 +18,13 @@ class TogetherProvider(BaseProvider):
 
     def __init__(self, llm) -> None:
         BaseProvider.__init__(self, llm)
+        self.async_client = openai.AsyncOpenAI(
+            base_url="https://api.together.xyz/v1",
+            api_key=os.getenv("TOGETHER_API_KEY"),
+        )
+        self.instructor_async_client = instructor.from_openai(
+            self.async_client, mode=instructor.Mode.TOOLS
+        )
 
     def __api_key(self) -> str | None:
         return os.getenv("TOGETHER_API_KEY")
@@ -72,3 +83,45 @@ class TogetherProvider(BaseProvider):
             "usage": json_response["usage"],
             "model": json_response["model"],
         }
+
+    async def get_async_completion_task(
+        self,
+        prompt: str,
+        task_metadata: dict,
+        temperature: float | None = None,
+        schema_class_path: str | None = None,
+        schema_class: type | None = None,
+    ):
+        """Perhaps this could also be shared across providers, as long as async_client and instructor_async_client are set."""
+        if schema_class_path is not None:
+            schema_class = get_schema_class(schema_class_path)
+
+        if schema_class is not None:
+            structured_output, completion = (
+                await self.instructor_async_client.chat.completions.create_with_completion(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=temperature,
+                    response_model=schema_class,
+                )
+            )
+            return {
+                "task_metadata": task_metadata,
+                "structured_output": structured_output,
+                "completion": completion,
+            }
+        else:
+            completion = await self.async_client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=temperature,
+            )
+            return {
+                "task_metadata": task_metadata,
+                "completion_text": completion.choices[0].message.content,
+                "completion": completion,
+            }

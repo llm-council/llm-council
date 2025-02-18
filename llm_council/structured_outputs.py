@@ -39,9 +39,14 @@ class User(BaseSchema):
     name: str
     age: int
 
-    @staticmethod
-    def method(name: Annotated[str, ""], age: Annotated[int, ""]):
-        pass
+
+class DirectAssessmentCriteria(BaseSchema):
+    name: str
+    value: int
+
+
+class MultipleDirectAssessmentCriteria(BaseSchema):
+    criteria: Dict[str, DirectAssessmentCriteria]
 
 
 STRUCTURED_OUTPUT_REGISTRY: Dict[str, Type[BaseSchema]] = {
@@ -49,4 +54,5 @@ STRUCTURED_OUTPUT_REGISTRY: Dict[str, Type[BaseSchema]] = {
     "answer_then_reasoning": AnswerThenReasoning,
     "answer_only": AnswerOnly,
     "test_user": User,
+    "direct_assessment": MultipleDirectAssessmentCriteria,
 }
