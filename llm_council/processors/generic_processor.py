@@ -18,13 +18,13 @@ import time
 
 from dataclasses import dataclass, field
 
-from llm_council.processors.services.base_service import BaseService
+from llm_council.providers.base_provider import BaseProvider
 from llm_council.utils.jsonl_io import append_to_jsonl
 
 
 def num_tokens_consumed_from_request(
     request_json: dict,
-    service_config: BaseService,
+    service_config: BaseProvider,
 ):
     """Count the number of tokens in the request."""
     num_tokens = 0
@@ -44,7 +44,7 @@ def num_tokens_consumed_from_request(
 async def process_api_requests_from_file(
     requests_filepath: str,
     save_filepath: str,
-    service_config: BaseService,
+    service_config: BaseProvider,
     logging_level: int,
 ):
     """Processes API requests in parallel, throttling to stay under rate limits."""

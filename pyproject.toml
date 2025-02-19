@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "llm-council-public"
+version = "0.1.0"
+description = ""
+authors = ["Justin Zhao <justinxzhao@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+anthropic = "^0.45.2"
+hypothesis-jsonschema = "^0.23.1"
+openai = "^1.63.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

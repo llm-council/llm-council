@@ -92,7 +92,7 @@ def consolidate_council_responses(
 
                         if not response_string:
                             breakpoint()
-                    except:
+                    except Exception as e:
                         # Some responses failed. Investigate.
                         print(
                             "\N{Angry Face}\N{Angry Face}\N{Angry Face}\N{Angry Face}\N{Angry Face}"

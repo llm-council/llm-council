@@ -54,7 +54,7 @@
 
 - model_name: Qwen1.5-110B-Chat
   providers:
-    - name: qwen
+    - name: together
       fully_qualified_name: together://Qwen/Qwen1.5-110B-Chat
       costs:
         serverless:

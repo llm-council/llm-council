@@ -35,8 +35,24 @@ class AnswerOnly(BaseSchema):
         pass
 
 
+class User(BaseSchema):
+    name: str
+    age: int
+
+
+class DirectAssessmentCriteria(BaseSchema):
+    name: str
+    value: int
+
+
+class MultipleDirectAssessmentCriteria(BaseSchema):
+    criteria: Dict[str, DirectAssessmentCriteria]
+
+
 STRUCTURED_OUTPUT_REGISTRY: Dict[str, Type[BaseSchema]] = {
     "reasoning_then_answer": ReasoningThenAnswer,
     "answer_then_reasoning": AnswerThenReasoning,
     "answer_only": AnswerOnly,
+    "test_user": User,
+    "direct_assessment": MultipleDirectAssessmentCriteria,
 }

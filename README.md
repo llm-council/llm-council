@@ -194,24 +194,24 @@ For 1-off testing, refer to `issue_single_prompt.py`.
 
 ### Adding a new Provider
 
-Under `llm_council/processors/services/`, define a new class that implements the `BaseService` class. For example:
+Under `llm_council/processors/services/`, define a new class that implements the `BaseProvider` class. For example:
 
 ```python
 import dotenv
 import os
 import logging
 
-from llm_council.processors.services.base_service import BaseService
+from llm_council.providers.base_provider import BaseProvider
 
 # Load credentials from a .env file.
 dotenv.load_dotenv()
 
 
-class OpenAIService(BaseService):
+class OpenAIProvider(BaseProvider):
     """https://platform.openai.com/docs/api-reference/making-requests"""
 
     def __init__(self, llm) -> None:
-        BaseService.__init__(self, llm)
+        BaseProvider.__init__(self, llm)
 
         if "gpt-4o-mini" in llm:
             self.max_requests_per_minute = 30000
@@ -292,17 +292,19 @@ Then, import the service and add it to the provider registry in `llm_council/pro
 
 Finally, add valid qualified provider paths to `llm_council/constants.py`, e.g.
 
-```
-"openai://gpt-3.5-turbo-0125",
-"openai://gpt-4-turbo-2024-04-09",
-"openai://gpt-4-0613",  # gpt-4
-"openai://gpt-4o-mini-2024-07-18",
-"openai://gpt-4o-2024-08-06",
-"openai://o1-preview-2024-09-12",
-"openai://o1-mini-2024-09-12",
+```py
+[
+    "openai://gpt-3.5-turbo-0125",
+    "openai://gpt-4-turbo-2024-04-09",
+    "openai://gpt-4-0613",  # gpt-4
+    "openai://gpt-4o-mini-2024-07-18",
+    "openai://gpt-4o-2024-08-06",
+    "openai://o1-preview-2024-09-12",
+    "openai://o1-mini-2024-09-12",
+]
 ```
 
-#### Add a new structured output schema.
+#### Add a new structured output schema
 
 Add a dataclass to `llm_council/structured_outputs.py`.
 
@@ -325,7 +327,7 @@ class AnswerThenReasoning(BaseSchema):
         pass
 ```
 
-NOTE: The `method()` staticmethod is necessary for the Lepton provider as their interface uses an 
+NOTE: The `method()` staticmethod is necessary for the Lepton provider as their interface uses an
 annotated function call to enable constrained decoding.
 
 ## Roadmap
