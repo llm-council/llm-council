@@ -21,7 +21,7 @@ def get_side(rating):
         return "A"
     if rating == "B>A" or rating == "B>>A":
         return "B"
-    return "Tie"
+    return TIE
 
 
 def get_judge_to_judge_agreement(judge1_votes, judge2_votes, method):

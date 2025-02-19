@@ -142,10 +142,11 @@ def run_processors_for_request_files(request_files: list[str], directory: str):
 
     # Use ThreadPoolExecutor to run tasks in parallel
     with ThreadPoolExecutor() as executor:
-        # Dictionary to hold future tasks
         futures = [
             executor.submit(process_file, request_files_group)
-            for request_files_group in alive_it(request_files_grouped_by_provider.values())
+            for request_files_group in alive_it(
+                request_files_grouped_by_provider.values()
+            )
         ]
         # Wait for all futures to complete
         for future in as_completed(futures):
@@ -214,8 +215,9 @@ def rerun_bad_responses(responses_file: str, run_all: bool):
                     bad_responses.append(response)
                 else:
                     good_responses.append(response)
-            except:
+            except Exception as e:
                 bad_responses.append(response)
+                print(f"Error processing response: {e}")
                 continue
     print(f"Found {len(bad_responses)} bad responses.")
     if len(bad_responses) == 0:

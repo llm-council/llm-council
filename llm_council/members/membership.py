@@ -2,7 +2,7 @@ import os
 import yaml
 from pydantic import ValidationError
 from collections import defaultdict
-from llm_council.members.schema import LanguageModel  # Import your LanguageModel schema
+from llm_council.members.schema import LanguageModel
 
 
 def parse_yaml_files(directory_path: str):
@@ -70,5 +70,8 @@ def get_fully_qualified_model_name_to_llm_map() -> dict[str, str]:
     return fully_qualified_model_names
 
 
+# llm_short_name -> ["together://llm_name", "other_provider://llm_name_for_other_provider"]
 LLM_TO_FULLY_QUALIFIED_NAME_MAP = get_llm_to_fully_qualified_model_names_map()
+
+# "together://llm_name" -> llm_short_name
 FULLY_QUALIFIED_NAME_TO_LLM_MAP = get_fully_qualified_model_name_to_llm_map()

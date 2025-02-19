@@ -8,7 +8,6 @@ import pandas as pd
 from llm_council.utils import jsonl_io
 from llm_council.prompts import PROMPT_REGISTRY, get_realized_prompt
 from llm_council.constants import LLM_COUNCIL_MEMBERS
-from llm_council.processors.council_service import get_default_council_service
 from llm_council.processors.council_service import (
     get_default_council_service,
     CouncilService,

@@ -1,0 +1,3 @@
+llm_responder,llm_judge,Coherence,Relevance,completion_tokens,prompt_tokens,total_tokens
+together://meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo,openai://gpt-4o-mini,5,5,12,241,253
+openai://gpt-4o-mini,together://meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo,5,2,24,505,529
