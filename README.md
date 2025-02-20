@@ -5,7 +5,7 @@
 &dagger; Independent, &Dagger; Bocconi University
 
 <p align="center">
-  <img src="images/hero_2.png" height=250 alt="hero">
+  <img src="images/hero_3.png" height=250 alt="hero">
 </p>
 
 ## Quick links
@@ -16,7 +16,7 @@
 
 ## Abstract
 
-As Large Language Models (LLMs) continue to evolve, the search for efficient and meaningful evaluation methods is ongoing. Many recent evaluations use LLMs as judges to score outputs from other LLMs, often relying on a single large model like GPT-4o. However, using a single LLM judge is prone to intra-model bias, and many tasks - such as those related to emotional intelligence, creative writing, and persuasiveness - may be too subjective for a single model to judge fairly. We introduce the Language Model Council (LMC), where a group of LLMs collaborate to create tests, respond to them, and evaluate each other's responses to produce a ranking in a democratic fashion. Unlike previous approaches that focus on reducing cost or bias by using a panel of smaller models, our work examines the benefits and nuances of a fully inclusive LLM evaluation system. In a detailed case study on emotional intelligence, we deploy a council of 20 recent LLMs to rank each other on open-ended responses to interpersonal conflicts. Our results show that the LMC produces rankings that are more separable and more robust, and through a user study, we show that they are more consistent with human evaluations than any individual LLM judge. Using all LLMs for judging can be costly, however, so we use Monte Carlo simulations and hand-curated sub-councils to study hypothetical council compositions and discuss the value of the incremental LLM judge.
+As Large Language Models (LLMs) continue to evolve, evaluating them remains a persistent challenge. Many recent evaluations use LLMs as judges to score outputs from other LLMs, often relying on a single large model like GPT-4o. However, using a single LLM judge is prone to intra-model bias, and many tasks - such as those related to emotional intelligence, creative writing, and persuasiveness - may be too subjective for a single model to judge fairly. We introduce the Language Model Council (LMC), where a group of LLMs collaborate to create tests, respond to them, and evaluate each other's responses to produce a ranking in a democratic fashion. Unlike previous approaches that focus on reducing cost or bias by using a panel of smaller models, our work examines the benefits and nuances of a fully inclusive LLM evaluation system. In a detailed case study on emotional intelligence, we deploy a council of 20 recent LLMs to rank each other on open-ended responses to interpersonal conflicts. Our results show that the LMC produces rankings that are more separable and more robust, and through a user study, we show that they are more consistent with human evaluations than any individual LLM judge. Using all LLMs for judging can be costly, however, so we use Monte Carlo simulations and hand-curated sub-councils to study hypothetical council compositions and discuss the value of the incremental LLM judge.
 
 ## Analysis notebooks
 
@@ -303,41 +303,3 @@ Finally, add valid qualified provider paths to `llm_council/constants.py`, e.g.
     "openai://o1-mini-2024-09-12",
 ]
 ```
-
-#### Add a new structured output schema
-
-Add a dataclass to `llm_council/structured_outputs.py`.
-
-```python
-class ReasoningThenAnswer(BaseSchema):
-    reasoning: str
-    answer: str
-
-    @staticmethod
-    def method(reasoning: Annotated[str, ""], answer: Annotated[str, ""]):
-        pass
-
-
-class AnswerThenReasoning(BaseSchema):
-    answer: str
-    reasoning: str
-
-    @staticmethod
-    def method(answer: Annotated[str, ""], reaonsing: Annotated[str, ""]):
-        pass
-```
-
-NOTE: The `method()` staticmethod is necessary for the Lepton provider as their interface uses an
-annotated function call to enable constrained decoding.
-
-## Roadmap
-
-Loosely:
-
-- Add additional providers and services as they come into the market.
-- Enable customized per-llm rate limits as different developers may be on different tiers.
-- Simplify how users customize council compositions for completion and judging.
-- Flush out end-to-end interface for executing the council on a single prompt.
-- Add tests.
-
-Happy Council-ing!
