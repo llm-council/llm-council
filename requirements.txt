@@ -4,7 +4,6 @@ pandas
 fsspec
 tiktoken
 jsonlines
-leptonai
 
 # For analysis
 datasets
