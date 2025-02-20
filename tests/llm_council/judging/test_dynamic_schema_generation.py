@@ -3,7 +3,7 @@ from llm_council.judging.schema import (
     EvaluationConfig,
     DirectAssessmentConfig,
     DirectAssessmentCriteria,
-    DIRECT_ASSESSMENT_PROMPT_TEMPLATE,
+    DEFAULT_EVALUATION_CONFIG,
 )
 from llm_council.providers.openai_provider import OpenAIProvider
 from tqdm.asyncio import tqdm
@@ -32,29 +32,8 @@ Ultimately, it's a difficult decision, but I think it's better to err on the sid
 
 
 def test_create_dynamic_schema():
-    eval_config = EvaluationConfig(
-        type="direct_assessment",
-        exclude_self_grading=True,
-        cot_enabled=True,
-        config=DirectAssessmentConfig(
-            prompt_template=DIRECT_ASSESSMENT_PROMPT_TEMPLATE,
-            criteria=[
-                DirectAssessmentCriteria(
-                    name="Coherence",
-                    criteria_statement="The response is coherent.",
-                    prebuilt_likert_scale=5,
-                ),
-                DirectAssessmentCriteria(
-                    name="Relevance",
-                    criteria_statement="The response is relevant.",
-                    prebuilt_likert_scale=7,
-                ),
-            ],
-        ),
-    )
-
     # Generate the schema dynamically
-    schema_class = create_dynamic_schema(eval_config)
+    schema_class = create_dynamic_schema(DEFAULT_EVALUATION_CONFIG)
 
     # Check the JSON schema
     json_schema = schema_class.schema()
