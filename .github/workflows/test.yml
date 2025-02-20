@@ -49,4 +49,5 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          VERTEX_API_KEY: ${{ secrets.VERTEX_API_KEY }}
         run: poetry run pytest --maxfail=1 --disable-warnings
