@@ -98,7 +98,9 @@ class CouncilSession:
         )
         self.completions_df.to_csv(os.path.join(outdir, "completions.csv"), index=False)
         self.judging_df.to_csv(os.path.join(outdir, "judging.csv"), index=False)
-        save_config(self.evaluation_config, "evaluation_config.json")
+        save_config(
+            self.evaluation_config, os.path.join(outdir, "evaluation_config.json")
+        )
 
     @staticmethod
     def load(outdir):
@@ -115,7 +117,7 @@ class CouncilSession:
         )
         completions_df.to_csv(os.path.join(outdir, "completions.csv"), index=False)
         judging_df.to_csv(os.path.join(outdir, "judging.csv"), index=False)
-        evaluation_config = load_config("evaluation_config.json")
+        evaluation_config = load_config(os.path.join(outdir, "evaluation_config.json"))
 
         return CouncilSession(
             llms=llms,
