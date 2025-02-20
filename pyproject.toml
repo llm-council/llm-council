@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "llm-council-public"
+name = "llm-council"
 version = "0.1.0"
 description = ""
 authors = ["Justin Zhao <justinxzhao@gmail.com>"]
