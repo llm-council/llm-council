@@ -1,11 +1,9 @@
-# Language Model Council: Benchmarking Foundation Models on Highly Subjective Tasks by Consensus
+# Language Model Council: Democratically Benchmarking Foundation Models on Highly Subjective Tasks
 
-**Justin Zhao<sup>&dagger;</sup>, Flor Miriam Plaza-del-Arco<sup>&Dagger;</sup>, Benjamin Genchel<sup>&dagger;</sup>, Amanda Cercas Curry<sup>&Dagger;</sup>**
-
-&dagger; Independent, &Dagger; Bocconi University
+### Justin Zhao, Flor Miriam Plaza-del-Arco, Benjamin Genchel, Amanda Cercas Curry
 
 <p align="center">
-  <img src="images/hero_3.png" height=250 alt="hero">
+  <img src="images/hero_3.png" alt="hero">
 </p>
 
 ## Quick links
