@@ -34,7 +34,7 @@ jobs:
           version: ''
 
       - name: Install dependencies
-        run: run: poetry install --no-interaction --with dev
+        run: poetry install --no-interaction --with dev
 
       - name: Run tests
         env:
