@@ -1,2 +1,0 @@
-{"llm":"together:\/\/meta-llama\/Meta-Llama-3.1-8B-Instruct-Turbo","completion_text":"Hello. How can I assist you today?","completion_tokens":10,"prompt_tokens":38,"total_tokens":48}
-{"llm":"openai:\/\/gpt-4o-mini","completion_text":"Hello! How can I assist you today?","completion_tokens":10,"prompt_tokens":10,"total_tokens":20}

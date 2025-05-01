@@ -1,3 +1,0 @@
-llm,completion_text,completion_tokens,prompt_tokens,total_tokens
-together://meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo,Hello. How can I assist you today?,10,38,48
-openai://gpt-4o-mini,Hello! How can I assist you today?,10,10,20

@@ -136,3 +136,13 @@ def get_provider_instance_for_llm(llm: str, allowed_providers=None):
     """Returns an instantiated service class for a given fully qualified LLM name."""
     provider_name = get_provider_name(llm, allowed_providers)
     return PROVIDER_REGISTRY[provider_name]["class"](llm)
+
+
+def get_allowed_providers_from_env():
+    """Returns a list of allowed providers based on environment variables."""
+    allowed_providers = []
+    for provider_name, provider_cls in PROVIDER_REGISTRY.items():
+        if os.getenv(provider_cls["api_key_name"]) is not None:
+            allowed_providers.append(provider_name)
+
+    return allowed_providers

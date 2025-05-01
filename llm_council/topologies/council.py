@@ -1,4 +1,6 @@
 import pandas as pd
+import os
+import json
 from llm_council.judging.schema import (
     EvaluationConfig,
     create_dynamic_schema,
@@ -14,7 +16,10 @@ import asyncio
 from llm_council.providers.utils import (
     check_prompt_template_contains_all_placeholders,
 )
-from llm_council.providers.base_provider import BaseProvider
+from llm_council.providers.base_provider import (
+    BaseProvider,
+    get_allowed_providers_from_env,
+)
 from llm_council.judging.prompt_builder import LIKERT_PREBUILT_MAP
 from llm_council.sessions.council_session import CouncilSession
 
@@ -45,8 +50,6 @@ async def get_async_judge_direct_assessment_task(
     # sample_return_object = hypothesis_jsonschema.from_schema(
     #     schema_class.schema()
     # ).example()
-
-    # breakpoint()
 
     prompt = prompt_template.format(
         criteria_verbalized=criteria_verbalized,
@@ -103,25 +106,103 @@ def get_usage_information(completion):
         }
 
 
+# def get_pairwise_comparison_judging_tasks(completions_map, evaluation_config):
+#     if evaluation_config.config.algorithm_type == "all_pairs":
+
+#         all_pairs = []
+#         for llm in completions_map.keys():
+#             if llm == reference_llm and evaluation_config.config.skip_equal_pairs:
+#                 # Skip reference vs. reference.
+#                 continue
+#             if (
+#                 "context"
+#                 in id_to_llm_responder_to_metadata_dict[id][llm]["completion_request"]
+#             ):
+#                 context = id_to_llm_responder_to_metadata_dict[id][llm][
+#                     "completion_request"
+#                 ]["context"]
+#             else:
+#                 # context = "synthetic"
+#                 # context = id_to_llm_responder_to_metadata_dict[id][llm][
+#                 #     "completion_request"
+#                 # ]["response_string"]
+#                 context = id_to_llm_responder_to_metadata_dict[id][llm]["user_prompt"]
+#             all_pairs.append(
+#                 {
+#                     "first_completion": id_to_llm_responder_to_response_string_dict[id][
+#                         llm
+#                     ],
+#                     "second_completion": id_to_llm_responder_to_response_string_dict[
+#                         id
+#                     ][reference_llm],
+#                     "first_completion_by": llm,
+#                     "second_completion_by": reference_llm,
+#                     "metadata": id_to_llm_responder_to_metadata_dict[id][llm],
+#                     "context": context,
+#                 }
+#             )
+#             all_pairs.append(
+#                 {
+#                     "second_completion": id_to_llm_responder_to_response_string_dict[
+#                         id
+#                     ][llm],
+#                     "first_completion": id_to_llm_responder_to_response_string_dict[id][
+#                         reference_llm
+#                     ],
+#                     "second_completion_by": llm,
+#                     "first_completion_by": reference_llm,
+#                     "metadata": id_to_llm_responder_to_metadata_dict[id][llm],
+#                     "context": context,
+#                 }
+#             )
+
+#         for _ in range(num_reps):
+#             # Generate requests for each pair.
+#             for pair in all_pairs:
+#                 realized_prompt = get_realized_prompt(prompt_template_key, **pair)
+#                 metadata = pair["metadata"]
+#                 metadata["judging_request"] = {
+#                     "first_completion_by": pair["first_completion_by"],
+#                     "second_completion_by": pair["second_completion_by"],
+#                 }
+#                 council_service.write_council_request(
+#                     realized_prompt, metadata, temperature
+#                 )
+
+
 @topology(topology_name="council")
 class LanguageModelCouncil:
 
-    def __init__(self, llms: list[str], allowed_providers: list[str] | None = None):
-        """allowed_providers is a list of provider names that are allowed to be used. If None, then all providers are allowed."""
-        # Hold it all in memory bro.
-        # LLMs can be specified by short name or full name.
+    def __init__(
+        self, llms: list[str], evaluation_config: EvaluationConfig | None = None
+    ):
+        allowed_providers = get_allowed_providers_from_env()
 
         # Create a map of llm -> initialized provider object for each llm
         self.llm_to_provider_map = {
             llm: get_provider_instance_for_llm(llm, allowed_providers) for llm in llms
         }
 
+        # Define the evaluation config if one is not already defined.
+        if evaluation_config is None:
+            self.evaluation_config = DEFAULT_EVALUATION_CONFIG
+        else:
+            self.evaulation_config = evaluation_config
+
+        self.user_prompts = []
+
+        # List of all completions.
+        self.completions = []
+
+        # List of all judgments.
+        self.judgments = []
+
     async def collect_completions(
-        self, prompt: str
+        self, user_prompt: str
     ) -> tuple[dict[str, str], dict[str, dict]]:
         # Create a list of completion tasks.
         completion_tasks = [
-            provider.get_async_completion_task(prompt, task_metadata={"llm": llm})
+            provider.get_async_completion_task(user_prompt, task_metadata={"llm": llm})
             for llm, provider in self.llm_to_provider_map.items()
         ]
 
@@ -139,75 +220,46 @@ class LanguageModelCouncil:
 
             completions.append(
                 {
+                    "user_prompt": user_prompt,
                     "llm": llm,
                     "completion_text": completion_text,
                     **get_usage_information(completion),
                 }
             )
 
+        self.user_prompts.append(user_prompt)
         return pd.DataFrame(completions)
 
     async def collect_judge_ratings(
         self,
         user_prompt: str,
         completions_df: pd.DataFrame,
-        evaluation_config: EvaluationConfig | None,
-    ) -> tuple[pd.DataFrame, EvaluationConfig]:
-        # Create a map of llm -> completion for that LLM.
+    ) -> pd.DataFrame:
+        # Create a map of llm -> completion.
         completions_map = {
             row["llm"]: row["completion_text"] for _, row in completions_df.iterrows()
         }
 
-        # Define the evaluation config if one is not already defined.
-        if evaluation_config is None:
-            evaluation_config = DEFAULT_EVALUATION_CONFIG
-
-        # TODO: Support pairwise judging.
-        if evaluation_config.type == "direct_assessment":
-            # Direct assessment.
-            judging_tasks = []
-
-            # Go through all completions and all judges and generate completion tasks.
-            for llm_responder, completion_text in completions_map.items():
-                for llm_judge, provider in self.llm_to_provider_map.items():
-                    if (
-                        evaluation_config.exclude_self_grading
-                        and llm_responder == llm_judge
-                    ):
-                        # Self-grading is disabled.
-                        continue
-
-                    # Generate a judging task.
-                    judging_tasks.append(
-                        get_async_judging_task(
-                            provider_instance=provider,
-                            eval_config=evaluation_config,
-                            prompt_template_fields={
-                                "user_prompt": user_prompt,
-                                "response": completion_text,
-                            },
-                            task_metadata={
-                                "llm_responder": llm_responder,
-                                "llm_judge": llm_judge,
-                            },
-                        )
-                    )
-
-            # Collect judgments.
+        if self.evaluation_config.type == "direct_assessment":
+            judging_tasks = self.get_direct_assessment_judging_tasks(
+                completions_map, user_prompt
+            )
             judgments = []
             for future in tqdm.asyncio.tqdm.as_completed(
                 judging_tasks, total=len(judging_tasks)
             ):
                 result = await future
+
                 task_metadata = result["task_metadata"]
                 llm_responder = task_metadata["llm_responder"]
                 llm_judge = task_metadata["llm_judge"]
+                user_prompt = task_metadata["prompt"]
 
                 # Extract the criteria map.
                 structured_output = result["structured_output"]
                 criteria_map = {
                     criteria.name: getattr(structured_output, criteria.name)
-                    for criteria in evaluation_config.config.criteria
+                    for criteria in self.evaluation_config.config.criteria
                 }
 
                 judgment_completion = result["completion"]
@@ -216,14 +268,81 @@ class LanguageModelCouncil:
                     {
                         "llm_responder": llm_responder,
                         "llm_judge": llm_judge,
+                        "user_prompt": user_prompt,
                         **criteria_map,
                         **get_usage_information(judgment_completion),
                     }
                 )
+            return pd.DataFrame(judgments)
+        elif self.evaluation_config.type == "pairwise_comparison":
+            # get_pairwise_comparison_judging_tasks(completions_map)
+            raise NotImplementedError(
+                "Pairwise comparison judging tasks are not yet implemented."
+            )
 
-            return pd.DataFrame(judgments), evaluation_config
+    def get_direct_assessment_judging_tasks(self, completions_map, user_prompt) -> list:
+        # Go through all completions and all judges and generate completion tasks.
+        judging_tasks = []
+        for llm_responder, completion_text in completions_map.items():
+            for llm_judge, provider in self.llm_to_provider_map.items():
+                if (
+                    self.evaluation_config.exclude_self_grading
+                    and llm_responder == llm_judge
+                ):
+                    # Self-grading is disabled.
+                    continue
 
-        # For pairwise judging, we need to generate pairs of completions first.
+                # Generate a judging task.
+                judging_tasks.append(
+                    get_async_judging_task(
+                        provider_instance=provider,
+                        eval_config=self.evaluation_config,
+                        prompt_template_fields={
+                            "user_prompt": user_prompt,
+                            "response": completion_text,
+                        },
+                        task_metadata={
+                            "llm_responder": llm_responder,
+                            "llm_judge": llm_judge,
+                            "prompt": user_prompt,
+                        },
+                    )
+                )
+        return judging_tasks
+
+    async def execute_direct_assessment_judgment_tasks(
+        judging_tasks, evaluation_config
+    ) -> pd.DataFrame:
+        judgments = []
+        for future in tqdm.asyncio.tqdm.as_completed(
+            judging_tasks, total=len(judging_tasks)
+        ):
+            result = await future
+            task_metadata = result["task_metadata"]
+            llm_responder = task_metadata["llm_responder"]
+            llm_judge = task_metadata["llm_judge"]
+            user_prompt = task_metadata["prompt"]
+
+            # Extract the criteria map.
+            structured_output = result["structured_output"]
+            criteria_map = {
+                criteria.name: getattr(structured_output, criteria.name)
+                for criteria in evaluation_config.config.criteria
+            }
+
+            judgment_completion = result["completion"]
+
+            judgments.append(
+                {
+                    "llm_responder": llm_responder,
+                    "llm_judge": llm_judge,
+                    "user_prompt": user_prompt,
+                    **criteria_map,
+                    **get_usage_information(judgment_completion),
+                }
+            )
+
+        return pd.DataFrame(judgments)
 
     def execute(
         self,
@@ -243,26 +362,49 @@ class LanguageModelCouncil:
             raise ValueError("Only one of `prompt` or `completions` must be specified.")
 
         completions_df = asyncio.run(self.collect_completions(prompt))
+        # add completions to self.completions.
+        for _, row in completions_df.iterrows():
+            self.completions.append(row)
 
         # Judging.
-        judging_df, evaluation_config = asyncio.run(
+        judging_df = asyncio.run(
             self.collect_judge_ratings(
                 user_prompt=prompt,
                 completions_df=completions_df,
-                evaluation_config=evaluation_config,
             )
         )
+        # add judging_df to self.judgments.
+        for _, row in judging_df.iterrows():
+            self.judgments.append(row)
 
-        # TODO: Add judging llms.
-        session = CouncilSession(
-            llms=list(self.llm_to_provider_map.keys()),
-            prompt=prompt,
-            completions_df=completions_df,
-            judging_df=judging_df,
-            evaluation_config=evaluation_config,
+    def save(self, outdir):
+        # Save all artifacts to a directory.
+        """
+        outdir/
+            llm_to_provider_map.json
+            completions.jsonl
+            judging.jsonl
+            prompts.jsonl
+            evaluation_config.json
+        """
+        os.makedirs(outdir, exist_ok=True)
+
+        llms = list(self.llm_to_provider_map.keys())
+
+        with open(os.path.join(outdir, "llms.json"), "w") as f:
+            json.dump(llms, f)
+        with open(os.path.join(outdir, "prompts.json"), "w") as f:
+            json.dump(self.user_prompts, f)
+
+        pd.DataFrame(self.completions).to_json(
+            os.path.join(outdir, "completions.jsonl"), orient="records", lines=True
         )
-
-        return session
+        pd.DataFrame(self.judgments).to_json(
+            os.path.join(outdir, "judging.jsonl"), orient="records", lines=True
+        )
+        self.evaluation_config.save_config(
+            os.path.join(outdir, "evaluation_config.json")
+        )
 
 
 # The council executes many sessions.

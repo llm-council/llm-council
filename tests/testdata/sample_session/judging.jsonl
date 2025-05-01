@@ -1,2 +1,0 @@
-{"llm_responder":"openai:\/\/gpt-4o-mini","llm_judge":"together:\/\/meta-llama\/Meta-Llama-3.1-8B-Instruct-Turbo","Coherence":5,"Relevance":2,"completion_tokens":24,"prompt_tokens":505,"total_tokens":529}
-{"llm_responder":"together:\/\/meta-llama\/Meta-Llama-3.1-8B-Instruct-Turbo","llm_judge":"openai:\/\/gpt-4o-mini","Coherence":5,"Relevance":5,"completion_tokens":12,"prompt_tokens":241,"total_tokens":253}
