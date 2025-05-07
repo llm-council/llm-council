@@ -126,9 +126,13 @@ class BaseProvider:
         reset_file(self.get_responses_path(outdir))
 
     async def get_async_completion_task(
-        self, prompt, task_metadata, temperature, schema_name, schema_class
+        self, prompt, task_metadata, temperature, schema_class
     ):
-        # raise NotImplementedError
+        """Returns an async task for the given prompt and metadata."""
+        pass
+
+    def list_models(self):
+        """Returns a list of available models for the provider."""
         pass
 
 

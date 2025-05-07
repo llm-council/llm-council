@@ -7,12 +7,14 @@ import openai
 from llm_council.providers.base_provider import BaseProvider
 from llm_council.structured_outputs import STRUCTURED_OUTPUT_REGISTRY
 from llm_council.providers.base_provider import provider
-from llm_council.judging.schema import EvaluationConfig, create_dynamic_schema
+from llm_council.judging.schema import EvaluationConfig
+from llm_council.structured_outputs import create_dynamic_schema
 from llm_council.providers.utils import (
     get_schema_class,
     check_prompt_template_contains_all_placeholders,
 )
 import importlib
+import requests
 
 dotenv.load_dotenv()
 
@@ -106,7 +108,6 @@ class OpenAIProvider(BaseProvider):
         prompt: str,
         task_metadata: dict,
         temperature: float | None = None,
-        schema_class_path: str | None = None,
         schema_class: type | None = None,
     ):
         """Perhaps this could also be shared across providers, as long as async_client and instructor_async_client are set.
@@ -114,9 +115,6 @@ class OpenAIProvider(BaseProvider):
         Default temperature is 1, and can be simply None:
             https://platform.openai.com/docs/api-reference/chat/create#chat-create-temperature
         """
-        if schema_class_path is not None:
-            schema_class = get_schema_class(schema_class_path)
-
         if schema_class is not None:
             structured_output, completion = (
                 await self.instructor_async_client.chat.completions.create_with_completion(
@@ -146,3 +144,21 @@ class OpenAIProvider(BaseProvider):
                 "completion_text": completion.choices[0].message.content,
                 "completion": completion,
             }
+
+    def list_models(self):
+        def list_models(self):
+            api_key = self.__api_key()
+            if not api_key:
+                raise ValueError("API key is not set.")
+
+            url = "https://api.openai.com/v1/models"
+            headers = {"Authorization": f"Bearer {api_key}"}
+
+            response = requests.get(url, headers=headers)
+            if response.status_code != 200:
+                raise Exception(
+                    f"Failed to fetch models: {response.status_code}, {response.text}"
+                )
+
+            models = response.json().get("data", [])
+            return [model["id"] for model in models]

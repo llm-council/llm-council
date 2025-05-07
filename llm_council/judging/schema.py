@@ -29,23 +29,56 @@ class DirectAssessmentConfig(BaseModel):
     )
 
 
+class PairwiseComparisonFixedReferencesConfig(BaseModel):
+    reference_llms: List[str] = Field(
+        ...,
+        description="The reference LLMs that the other models are compared against.",
+    )
+
+
+class PairwiseComparisonRandomMatchesConfig(BaseModel):
+    n_random_pairs: int = Field(
+        ...,
+        description="The number of random pairs to generate for each comparison.",
+    )
+
+
 class PairwiseComparisonConfig(BaseModel):
     """Configuration schema for pairwise comparison evaluations."""
 
     prompt_template: str = Field(
         ..., description="The prompt template used for pairwise comparison."
     )
-    themes_to_consider: List[str] = Field(
-        ...,
-        description="A list of themes or aspects that should be considered during comparison.",
-    )
     granularity: Literal[2, 3, 4, 5] = Field(
         ...,
-        description="The level of granularity for ranking (e.g., binary win/loss vs. finer scales).",
+        description="""
+The level of granularity for ranking (e.g., binary win/loss vs. finer scales).
+
+2: Binary (A wins, B wins)
+3: Ternary (A wins, tie, B wins)
+4: Quaternary (A wins, A slightly wins, B slightly wins, B wins)
+5: Quinary (A wins, A slightly wins, tie, B slightly wins, B wins)
+""",
     )
-    reference_llm: str = Field(
+    skip_equal_pairs: bool = Field(
+        True,
+        description="If True, the system will skip pairs where the two models are the same.",
+    )
+    algorithm_type: Literal["fixed_reference_models", "random", "all_pairs"] = Field(
         ...,
-        description="The reference LLM that the other models are compared against.",
+        description="The algorithm used to generate pairwise comparisons.",
+    )
+    position_flipping: bool = Field(
+        True,
+        description="If True, exhaustively flip the position of the pairwise comparisons being generated.",
+    )
+    algorithm_config: Union[
+        PairwiseComparisonFixedReferencesConfig,
+        PairwiseComparisonRandomMatchesConfig,
+        None,
+    ] = Field(
+        None,
+        description="The configuration for the pairwise comparison algorithm. Can be None.",
     )
 
 
@@ -68,23 +101,15 @@ class EvaluationConfig(BaseModel):
         ...,
         description="The configuration object, which depends on the evaluation type.",
     )
+    reps: int = Field(
+        1,
+        description="The number of repetitions for each evaluation instance.",
+    )
 
-
-def create_dynamic_schema(eval_config: EvaluationConfig) -> Type[BaseModel]:
-    """Dynamically creates a Pydantic schema class based on the EvaluationConfig input."""
-    if eval_config.type != "direct_assessment":
-        raise ValueError("Currently only supports direct assessment.")
-
-    # Dynamically define fields based on provided criteria
-    fields = {
-        criterion.name: (int, Field(..., description=criterion.criteria_statement))
-        for criterion in eval_config.config.criteria
-    }
-
-    # Use Pydantic's create_model to generate a new schema class dynamically
-    schema_class = create_model("DynamicAssessmentSchema", **fields)
-
-    return schema_class
+    def save_config(self, file_path: str):
+        """Saves a Pydantic EvaluationConfig object to a JSON file."""
+        with open(file_path, "w") as f:
+            json.dump(self.dict(), f, indent=4)
 
 
 def save_config(config: EvaluationConfig, file_path: str):
@@ -118,5 +143,34 @@ DEFAULT_EVALUATION_CONFIG = EvaluationConfig(
                 criteria_statement="The response is relevant.",
             ),
         ],
+    ),
+)
+
+
+DEFAULT_PAIRWISE_EVALUATION_CONFIG = EvaluationConfig(
+    type="pairwise_comparison",
+    exclude_self_grading=False,
+    cot_enabled=False,
+    config=PairwiseComparisonConfig(
+        prompt_template="""The user prompt was {user_prompt}. 
+        
+We want to decide which response is better. Here are some themes to consider: coherence and relevance. 
+
+---
+Here is response 1:
+---
+{response_1}
+
+---
+Here is response 2:
+---
+{response_2}
+
+You must output only one of the following choices as your final verdict with a label:
+{pairwise_comparison_labels}
+
+""",
+        granularity=5,
+        algorithm_type="all_pairs",
     ),
 )

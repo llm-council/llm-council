@@ -1,10 +1,10 @@
 from llm_council.judging.schema import (
-    create_dynamic_schema,
     EvaluationConfig,
     DirectAssessmentConfig,
     DirectAssessmentCriteria,
     DEFAULT_EVALUATION_CONFIG,
 )
+from llm_council.structured_outputs import create_dynamic_schema
 from llm_council.providers.openai_provider import OpenAIProvider
 from tqdm.asyncio import tqdm
 
@@ -51,6 +51,6 @@ def test_create_dynamic_schema():
             },
         },
         "required": ["Coherence", "Relevance"],
-        "title": "DynamicAssessmentSchema",
+        "title": "DynamicDirectAssessmentSchema",
         "type": "object",
     }

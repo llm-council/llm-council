@@ -3,15 +3,17 @@ import os
 import json
 from llm_council.judging.schema import (
     EvaluationConfig,
-    create_dynamic_schema,
     DEFAULT_EVALUATION_CONFIG,
+    DEFAULT_PAIRWISE_EVALUATION_CONFIG,
 )
+from llm_council.structured_outputs import create_dynamic_schema
 from llm_council.topologies.base_topology import topology
 from llm_council.providers.base_provider import (
     get_provider_instance_for_llm,
     PROVIDER_REGISTRY,
 )
 import tqdm.asyncio
+import random
 import asyncio
 from llm_council.providers.utils import (
     check_prompt_template_contains_all_placeholders,
@@ -22,6 +24,39 @@ from llm_council.providers.base_provider import (
 )
 from llm_council.judging.prompt_builder import LIKERT_PREBUILT_MAP
 from llm_council.sessions.council_session import CouncilSession
+from llm_council.structured_outputs import (
+    PAIRWISE_COMPARISON_LABEL_MAP,
+    get_pairwise_comparison_schema,
+)
+
+
+async def get_async_judge_pairwise_comparison_task(
+    provider_instance: BaseProvider,
+    eval_config: EvaluationConfig,
+    prompt_template_fields=dict,
+    task_metadata: dict = dict,
+    temperature: float | None = None,
+):
+    prompt_template = eval_config.config.prompt_template
+
+    # Get pairwise comparison labels.
+    prompt_template_fields["pairwise_comparison_labels"] = (
+        PAIRWISE_COMPARISON_LABEL_MAP[eval_config.config.granularity]
+    )
+
+    schema_class = get_pairwise_comparison_schema(
+        eval_config.config.granularity, eval_config.cot_enabled
+    )
+
+    check_prompt_template_contains_all_placeholders(
+        prompt_template, prompt_template_fields
+    )
+
+    prompt = prompt_template.format(**prompt_template_fields)
+
+    return await provider_instance.get_async_completion_task(
+        prompt, task_metadata, temperature=temperature, schema_class=schema_class
+    )
 
 
 async def get_async_judge_direct_assessment_task(
@@ -47,14 +82,9 @@ async def get_async_judge_direct_assessment_task(
         eval_config.config.prebuilt_likert_scale
     ]
 
-    # sample_return_object = hypothesis_jsonschema.from_schema(
-    #     schema_class.schema()
-    # ).example()
-
     prompt = prompt_template.format(
         criteria_verbalized=criteria_verbalized,
         likert_scale_verbalized=likert_scale_verbalized,
-        # sample_return_object=sample_return_object,
         **prompt_template_fields,
     )
 
@@ -68,25 +98,6 @@ async def get_async_judge_direct_assessment_task(
     return await provider_instance.get_async_completion_task(
         prompt, task_metadata, temperature=temperature, schema_class=schema_class
     )
-
-
-async def get_async_judging_task(
-    provider_instance: BaseProvider,
-    eval_config: EvaluationConfig,
-    prompt_template_fields=dict,
-    task_metadata: dict = dict,
-    temperature: float | None = None,
-):
-    if eval_config.type == "direct_assessment":
-        return await get_async_judge_direct_assessment_task(
-            provider_instance,
-            eval_config,
-            prompt_template_fields=prompt_template_fields,
-            task_metadata=task_metadata,
-            temperature=temperature,
-        )
-    else:
-        raise ValueError(f"Unsupported evaluation type: {eval_config.type}")
 
 
 def get_usage_information(completion):
@@ -106,70 +117,6 @@ def get_usage_information(completion):
         }
 
 
-# def get_pairwise_comparison_judging_tasks(completions_map, evaluation_config):
-#     if evaluation_config.config.algorithm_type == "all_pairs":
-
-#         all_pairs = []
-#         for llm in completions_map.keys():
-#             if llm == reference_llm and evaluation_config.config.skip_equal_pairs:
-#                 # Skip reference vs. reference.
-#                 continue
-#             if (
-#                 "context"
-#                 in id_to_llm_responder_to_metadata_dict[id][llm]["completion_request"]
-#             ):
-#                 context = id_to_llm_responder_to_metadata_dict[id][llm][
-#                     "completion_request"
-#                 ]["context"]
-#             else:
-#                 # context = "synthetic"
-#                 # context = id_to_llm_responder_to_metadata_dict[id][llm][
-#                 #     "completion_request"
-#                 # ]["response_string"]
-#                 context = id_to_llm_responder_to_metadata_dict[id][llm]["user_prompt"]
-#             all_pairs.append(
-#                 {
-#                     "first_completion": id_to_llm_responder_to_response_string_dict[id][
-#                         llm
-#                     ],
-#                     "second_completion": id_to_llm_responder_to_response_string_dict[
-#                         id
-#                     ][reference_llm],
-#                     "first_completion_by": llm,
-#                     "second_completion_by": reference_llm,
-#                     "metadata": id_to_llm_responder_to_metadata_dict[id][llm],
-#                     "context": context,
-#                 }
-#             )
-#             all_pairs.append(
-#                 {
-#                     "second_completion": id_to_llm_responder_to_response_string_dict[
-#                         id
-#                     ][llm],
-#                     "first_completion": id_to_llm_responder_to_response_string_dict[id][
-#                         reference_llm
-#                     ],
-#                     "second_completion_by": llm,
-#                     "first_completion_by": reference_llm,
-#                     "metadata": id_to_llm_responder_to_metadata_dict[id][llm],
-#                     "context": context,
-#                 }
-#             )
-
-#         for _ in range(num_reps):
-#             # Generate requests for each pair.
-#             for pair in all_pairs:
-#                 realized_prompt = get_realized_prompt(prompt_template_key, **pair)
-#                 metadata = pair["metadata"]
-#                 metadata["judging_request"] = {
-#                     "first_completion_by": pair["first_completion_by"],
-#                     "second_completion_by": pair["second_completion_by"],
-#                 }
-#                 council_service.write_council_request(
-#                     realized_prompt, metadata, temperature
-#                 )
-
-
 @topology(topology_name="council")
 class LanguageModelCouncil:
 
@@ -185,9 +132,9 @@ class LanguageModelCouncil:
 
         # Define the evaluation config if one is not already defined.
         if evaluation_config is None:
-            self.evaluation_config = DEFAULT_EVALUATION_CONFIG
+            self.evaluation_config = DEFAULT_PAIRWISE_EVALUATION_CONFIG
         else:
-            self.evaulation_config = evaluation_config
+            self.evaluation_config = evaluation_config
 
         self.user_prompts = []
 
@@ -274,11 +221,140 @@ class LanguageModelCouncil:
                     }
                 )
             return pd.DataFrame(judgments)
+
         elif self.evaluation_config.type == "pairwise_comparison":
-            # get_pairwise_comparison_judging_tasks(completions_map)
-            raise NotImplementedError(
-                "Pairwise comparison judging tasks are not yet implemented."
+            judging_tasks = self.get_pairwise_comparison_judging_tasks(
+                completions_map, user_prompt
             )
+            judgments = []
+            for future in tqdm.asyncio.tqdm.as_completed(
+                judging_tasks, total=len(judging_tasks)
+            ):
+                result = await future
+
+                # Extract relevant results.
+                task_metadata = result["task_metadata"]
+                llm_responder_1 = task_metadata["llm_responder_1"]
+                llm_responder_2 = task_metadata["llm_responder_2"]
+                llm_judge = task_metadata["llm_judge"]
+                user_prompt = task_metadata["user_prompt"]
+                structured_output = result["structured_output"]
+                judgment_completion = result["completion"]
+
+                judgment_row = {
+                    "user_prompt": user_prompt,
+                    "llm_judge": llm_judge,
+                    "llm_responder_1": llm_responder_1,
+                    "llm_responder_2": llm_responder_2,
+                    "rating": structured_output.rating,
+                }
+
+                # Add explanation if it's available.
+                if hasattr(structured_output, "explanation"):
+                    judgment_row["explanation"] = structured_output.explanation
+
+                # Add usage information.
+                judgment_row.update(
+                    {
+                        **get_usage_information(judgment_completion),
+                    }
+                )
+
+                judgments.append(judgment_row)
+            return pd.DataFrame(judgments)
+
+    def get_pairwise_comparison_judging_tasks(self, completions_map, user_prompt):
+        pairwise_comparison_config = self.evaluation_config.config
+
+        # Generate all pairs of completions.
+        completion_pairs = [
+            (llm1, llm2)
+            for i, llm1 in enumerate(completions_map.keys())
+            for llm2 in list(completions_map.keys())[i + 1 :]
+        ]
+
+        # Filter down the pairs based on the pairwise_comparison_config.
+        if pairwise_comparison_config.algorithm_type == "all_pairs":
+            # no filtering needed.
+            pass
+        elif pairwise_comparison_config.algorithm_type == "random_pairs":
+            # Generate a random sample of pairs of completions.
+            completion_pairs = random.sample(
+                completion_pairs,
+                pairwise_comparison_config.n_random_pairs,
+            )
+        elif pairwise_comparison_config.algorithm_type == "fixed_reference_models":
+            # Use llm1 as a fixed reference model.
+            completion_pairs = [
+                pair
+                for pair in completion_pairs
+                if pair[0] in pairwise_comparison_config.reference_models
+            ]
+
+        # Skip equal pairs.
+        if pairwise_comparison_config.skip_equal_pairs:
+            completion_pairs = [
+                (llm1, llm2)
+                for llm1, llm2 in completion_pairs
+                if completions_map[llm1] != completions_map[llm2]
+            ]
+
+        # Apply positional flipping.
+        if pairwise_comparison_config.position_flipping:
+            completion_pairs = [
+                (llm2, llm1) for llm1, llm2 in completion_pairs
+            ] + completion_pairs
+
+        # Apply reps.
+        completion_pairs = [
+            (llm1, llm2)
+            for llm1, llm2 in completion_pairs
+            for _ in range(self.evaluation_config.reps)
+        ]
+
+        # Fail if completion_pairs is empty.
+        if len(completion_pairs) == 0:
+            raise ValueError(
+                "No pairs of completions to judge. Please check your pairwise_comparison_config. Perhaps reference models are misspelled?"
+            )
+
+        # Convert the completion_pairs into tasks.
+        pairwise_comparison_tasks = []
+        for llm1, llm2 in completion_pairs:
+            # Generate a judging task, for each LLM in the llm_to_provider_map.
+            for llm_judge, provider in self.llm_to_provider_map.items():
+                if self.evaluation_config.exclude_self_grading and (
+                    llm1 == llm_judge or llm2 == llm_judge
+                ):
+                    # Self-grading is disabled.
+                    continue
+
+                # Generate a judging task.
+                pairwise_comparison_tasks.append(
+                    get_async_judge_pairwise_comparison_task(
+                        provider_instance=provider,
+                        eval_config=self.evaluation_config,
+                        prompt_template_fields={
+                            "user_prompt": user_prompt,
+                            "response_1": completions_map[llm1],
+                            "response_2": completions_map[llm2],
+                        },
+                        task_metadata={
+                            "llm_responder_1": llm1,
+                            "llm_responder_2": llm2,
+                            "llm_judge": llm_judge,
+                            "user_prompt": user_prompt,
+                        },
+                    )
+                )
+
+        print(f"Generated {len(pairwise_comparison_tasks)} pairwise comparison tasks.")
+        if len(pairwise_comparison_tasks) == 0:
+            raise ValueError(
+                "No pairwise comparison tasks generated. Please check your pairwise_comparison_config."
+            )
+
+        return pairwise_comparison_tasks
 
     def get_direct_assessment_judging_tasks(self, completions_map, user_prompt) -> list:
         # Go through all completions and all judges and generate completion tasks.
@@ -294,7 +370,7 @@ class LanguageModelCouncil:
 
                 # Generate a judging task.
                 judging_tasks.append(
-                    get_async_judging_task(
+                    get_async_judge_direct_assessment_task(
                         provider_instance=provider,
                         eval_config=self.evaluation_config,
                         prompt_template_fields={
@@ -373,7 +449,7 @@ class LanguageModelCouncil:
                 completions_df=completions_df,
             )
         )
-        # add judging_df to self.judgments.
+        # add judging_df to overall council self.judgments.
         for _, row in judging_df.iterrows():
             self.judgments.append(row)
 
@@ -405,12 +481,3 @@ class LanguageModelCouncil:
         self.evaluation_config.save_config(
             os.path.join(outdir, "evaluation_config.json")
         )
-
-
-# The council executes many sessions.
-# Should there be a way to combine sessions.
-
-# Users may also be interested in running the same completions through different judging configurations.
-# Future expansions / use cases:
-# Support automatic evaluation?
-# Support consistency experiments?

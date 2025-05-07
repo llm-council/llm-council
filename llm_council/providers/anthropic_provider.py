@@ -107,14 +107,10 @@ class AnthropicProvider(BaseProvider):
         prompt: str,
         task_metadata: dict,
         temperature: float | None = None,
-        schema_class_path: str | None = None,
         schema_class: type | None = None,
         max_tokens: int = 2048,
     ):
         """Perhaps this could also be shared across providers, as long as async_client and instructor_async_client are set."""
-        if schema_class_path is not None:
-            schema_class = get_schema_class(schema_class_path)
-
         if schema_class is not None:
             # Anthropic SDK distinguishes arguments that are explicitly "not given" from those that are given as None.
             if temperature is not None:

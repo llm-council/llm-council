@@ -89,13 +89,9 @@ class TogetherProvider(BaseProvider):
         prompt: str,
         task_metadata: dict,
         temperature: float | None = None,
-        schema_class_path: str | None = None,
         schema_class: type | None = None,
     ):
         """Perhaps this could also be shared across providers, as long as async_client and instructor_async_client are set."""
-        if schema_class_path is not None:
-            schema_class = get_schema_class(schema_class_path)
-
         if schema_class is not None:
             structured_output, completion = (
                 await self.instructor_async_client.chat.completions.create_with_completion(
