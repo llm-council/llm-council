@@ -1,4 +1,4 @@
-# from llm_council.judging.schema import DirectAssessmentConfig
+import re
 
 
 DIRECT_ASSESSMENT_JUDGING_BASE_TEMPLATE = """We would like to evaluate the quality of the response.
@@ -19,13 +19,6 @@ Options:
 
 {likert_scale_verbalized}
 """
-
-# Please return your rating as a JSON object with the key as the criteria and the rating as an integer value. for example:
-
-# {{
-#     <criteria>: <rating>,
-#     "Relevance": <rating>,
-# }}
 
 
 # Placeholders that are handled by the prompt builder.
@@ -90,3 +83,18 @@ LIKERT_PREBUILT_MAP = {
     6: PREBUILT_LIKERT_SCALE_6,
     7: PREBUILT_LIKERT_SCALE_7,
 }
+
+
+def get_placeholders(s):
+    # formatter = string.Formatter()
+    # return [field_name for field_name, *_ in formatter.parse(s) if field_name]
+    return re.findall(r"\{([^}]+)\}", s)
+
+
+def check_prompt_template_contains_all_placeholders(prompt_template, prompt_fields):
+    prompt_placeholders = get_placeholders(prompt_template)
+    metadata_keys = list(prompt_fields.keys()) + DIRECT_ASSESSMENT_SPECIAL_PLACEHOLDERS
+    if not set(prompt_placeholders).issubset(metadata_keys):
+        raise ValueError(
+            f"Placeholders not accounted for: {set(prompt_placeholders) - set(metadata_keys)}."
+        )

@@ -163,9 +163,9 @@ DEFAULT_PAIRWISE_EVALUATION_CONFIG = EvaluationConfig(
     exclude_self_grading=False,
     cot_enabled=False,
     config=PairwiseComparisonConfig(
-        prompt_template="""The user prompt was {user_prompt}. 
-        
-We want to decide which response is better. Here are some themes to consider: coherence and relevance. 
+        prompt_template="""The user prompt was {user_prompt}.
+
+We want to decide which response is better. Here are some themes to consider: coherence and relevance.
 
 ---
 Here is response 1:

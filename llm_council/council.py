@@ -7,30 +7,24 @@ from llm_council.judging.schema import (
     DEFAULT_PAIRWISE_EVALUATION_CONFIG,
 )
 from llm_council.structured_outputs import create_dynamic_schema
-from llm_council.topologies.base_topology import topology
-from llm_council.providers.base_provider import (
-    get_provider_instance_for_llm,
-    PROVIDER_REGISTRY,
-)
 import tqdm.asyncio
 import random
-import asyncio
-from llm_council.providers.utils import (
+from llm_council.judging.prompt_builder import (
+    LIKERT_PREBUILT_MAP,
     check_prompt_template_contains_all_placeholders,
 )
-from llm_council.judging.prompt_builder import LIKERT_PREBUILT_MAP
 from llm_council.structured_outputs import (
     PAIRWISE_COMPARISON_LABEL_MAP,
     get_pairwise_comparison_schema,
 )
 from openai import AsyncOpenAI
+import re
 
 
 def process_pairwise_choice(raw_pairwise_choice: str) -> str:
     return raw_pairwise_choice.replace("[", "").replace("]", "")
 
 
-@topology(topology_name="council")
 class LanguageModelCouncil:
 
     def __init__(

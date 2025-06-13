@@ -6,13 +6,13 @@ if __name__ == "__main__":
     lmc = LanguageModelCouncil(
         models=[
             "google/gemini-2.5-flash-preview-05-20",
-            # "deepseek/deepseek-r1-0528",
             "meta-llama/llama-3.1-8b-instruct",
         ]
     )
 
-    # completions, judgements = await lmc.execute_notebook(prompt="Say hello.")
-
     lmc.execute(prompt="Say hello.")
 
     lmc.save("tests/testdata/sample_session")
+    lmc.load("tests/testdata/sample_session")
+
+    assert lmc.get_completions_df().shape[0] == 2, "No completions found."

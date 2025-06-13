@@ -28,7 +28,7 @@ def predict_win_rate(elo_ratings, SCALE=400, BASE=10, INIT_RATING=1000):
             wins[a][b] = ea
             wins[b][a] = 1 - ea
 
-    data = {a: [wins[a][b] if a != b else np.NAN for b in names] for a in names}
+    data = {a: [wins[a][b] if a != b else np.nan for b in names] for a in names}
 
     df = pd.DataFrame(data, index=names)
     df.index.name = "model_a"
@@ -71,7 +71,7 @@ def convert_judging_df_to_arena_hard_battles_df(judging_df, WEIGHT=3):
     battles = []
     for _, row in judging_df.iterrows():
         output = {
-            "question_id": row["emobench_id"],
+            # "question_id": row[example_id_column],
             "model_a": row["first_completion_by"],
             "model_b": row["second_completion_by"],
         }
@@ -95,7 +95,11 @@ def convert_judging_df_to_arena_hard_battles_df(judging_df, WEIGHT=3):
 
 
 def compute_mle_elo(
-    judging_df, reference_llm_respondent, SCALE=400, BASE=10, INIT_RATING=1000
+    judging_df,
+    reference_llm_respondent,
+    SCALE=400,
+    BASE=10,
+    INIT_RATING=1000,
 ) -> pd.Series:
     """Returns a Series of ELO ratings with the anchor's reference_llm_respondent score pinned to INIT_RATING (default=1000)."""
     df = convert_judging_df_to_arena_hard_battles_df(judging_df)

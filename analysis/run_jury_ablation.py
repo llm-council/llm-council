@@ -84,13 +84,13 @@ def predict_win_rate(elo_ratings, SCALE=400, BASE=10, INIT_RATING=1000):
     return df.T
 
 
-def get_battles_from_judgment(df, WEIGHT=3):
+def get_battles_from_judgment(df, example_id_column="emobench_id", WEIGHT=3):
     """Maps battle outcomes to specific winners. The WEIGHT is used to weight strong votes."""
     # Modified from https://github.com/lm-sys/arena-hard-auto/blob/main/show_result.py#L112C1-L176C30
     battles = []
     for _, row in df.iterrows():
         output = {
-            "question_id": row["emobench_id"],
+            "question_id": row[example_id_column],
             "model_a": row["first_completion_by"],
             "model_b": row["second_completion_by"],
         }
@@ -117,7 +117,9 @@ def get_battles_from_judgment(df, WEIGHT=3):
     return pd.DataFrame(battles)
 
 
-def compute_mle_elo(df, reference_llm_completer, SCALE=400, BASE=10, INIT_RATING=1000):
+def compute_mle_elo(
+    df, reference_llm_completer=None, SCALE=400, BASE=10, INIT_RATING=1000
+):
     """Compute the ELO scores for all models."""
     df = get_battles_from_judgment(df)
 
@@ -149,7 +151,7 @@ def compute_mle_elo(df, reference_llm_completer, SCALE=400, BASE=10, INIT_RATING
     elo_scores = SCALE * lr.coef_[0] + INIT_RATING
 
     # set anchor as reference_llm_completer = 1000
-    if reference_llm_completer in models.index:
+    if reference_llm_completer and reference_llm_completer in models.index:
         elo_scores += 1000 - elo_scores[models[reference_llm_completer]]
     return pd.Series(elo_scores, index=models.index).sort_values(ascending=False)
 

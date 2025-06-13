@@ -120,7 +120,7 @@ def get_pairwise_comparison_schema(
     )
 
 
-def create_dynamic_schema(eval_config: "EvaluationConfig") -> Type[BaseModel]:
+def create_dynamic_schema(eval_config) -> Type[BaseModel]:
     """Dynamically creates a Pydantic schema class based on the EvaluationConfig input."""
     if eval_config.type != "direct_assessment":
         raise ValueError("Currently only supports direct assessment.")
