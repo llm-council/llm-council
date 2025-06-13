@@ -4,12 +4,14 @@ from llm_council.topologies.council import LanguageModelCouncil
 if __name__ == "__main__":
     # Quick test.
     lmc = LanguageModelCouncil(
-        llms=[
-            "openai://gpt-4o-mini",
-            "together://meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-            # "anthropic://claude-3-haiku-20240307",
+        models=[
+            "google/gemini-2.5-flash-preview-05-20",
+            # "deepseek/deepseek-r1-0528",
+            "meta-llama/llama-3.1-8b-instruct",
         ]
     )
+
+    # completions, judgements = await lmc.execute_notebook(prompt="Say hello.")
 
     lmc.execute(prompt="Say hello.")
 

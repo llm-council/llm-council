@@ -79,6 +79,22 @@ def plot_heatmap(
     # Change font size globally.
     plt.rcParams.update({"font.size": font_size})
 
+    # Dynamically determine figure size if figsize is None
+    if figsize is None:
+        nrows, ncols = df.shape
+
+        # Linear interpolation between (2,2)->(4,4) and (20,20)->(20,20)
+        def interp(val, x0, x1, y0, y1):
+            if val <= x0:
+                return y0
+            if val >= x1:
+                return y1
+            return y0 + (y1 - y0) * (val - x0) / (x1 - x0)
+
+        width = interp(ncols, 2, 20, 4, 20)
+        height = interp(nrows, 2, 20, 4, 16)
+        figsize = (width, height)
+
     # Plotting the heatmap
     plt.figure(figsize=figsize)
     sns.heatmap(

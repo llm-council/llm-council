@@ -87,7 +87,7 @@ def get_pairwise_comparison_schema(
 ) -> type[BaseModel]:
     """
     Dynamically create and return a pydantic BaseModel that has:
-      • rating   – limited to the allowed bracket codes for the granularity
+      • pairwise_choice   – limited to the allowed bracket codes for the granularity
       • explanation – optional free‑text field (first, if `cot_enabled`)
     """
     labels = _labels_for(granularity)
@@ -97,14 +97,14 @@ def get_pairwise_comparison_schema(
 
     # Field definitions in the shape expected by `create_model`
     fields: dict[str, tuple[type, Field]] = {
-        "rating": (
+        "pairwise_choice": (
             RatingType,
             Field(..., description=f"One of: {', '.join(labels)}"),
         )
     }
 
     if cot_enabled:
-        # Insert 'explanation' before 'rating' (purely cosmetic – OpenAI cares about order)
+        # Insert 'explanation' before 'pairwise_choice' to force thinking before the answer.
         fields = {
             "explanation": (
                 str,
@@ -127,8 +127,8 @@ def create_dynamic_schema(eval_config: "EvaluationConfig") -> Type[BaseModel]:
 
     # Dynamically define fields based on provided criteria
     fields = {
-        criterion.name: (int, Field(..., description=criterion.criteria_statement))
-        for criterion in eval_config.config.criteria
+        criterion.name: (int, Field(..., description=criterion.statement))
+        for criterion in eval_config.config.rubric
     }
 
     # Use Pydantic's create_model to generate a new schema class dynamically

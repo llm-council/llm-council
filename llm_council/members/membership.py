@@ -36,7 +36,9 @@ def parse_yaml_files(directory_path: str):
     return language_models
 
 
-LLMS = parse_yaml_files("llm_council/members")
+# Construct the path relative to the current file's location
+current_dir = os.path.dirname(os.path.abspath(__file__))
+LLMS = parse_yaml_files(current_dir)
 
 
 def get_model_info(model_name: str):

@@ -90,37 +90,3 @@ LIKERT_PREBUILT_MAP = {
     6: PREBUILT_LIKERT_SCALE_6,
     7: PREBUILT_LIKERT_SCALE_7,
 }
-
-
-# def generate_criteria_verablized(direct_assessment_config: DirectAssessmentConfig):
-#     criteria_verbalized = ""
-#     for i, criterion in enumerate(direct_assessment_config.criteria, start=1):
-#         criteria_verbalized += (
-#             f"{i}. {criterion.name}: {criterion.criteria_statement}\n"
-#         )
-#     return criteria_verbalized
-
-
-# def generate_likert_scale_verbalized(likert_scale):
-#     return LIKERT_PREBUILT_MAP[likert_scale]
-
-
-# import jsonschema
-# import hypothesis_jsonschema
-# import json
-
-# # Example JSON schema
-# schema = {
-#     "type": "object",
-#     "properties": {
-#         "name": {"type": "string"},
-#         "age": {"type": "integer", "minimum": 18},
-#         "email": {"type": "string", "format": "email"},
-#         "is_active": {"type": "boolean"},
-#         "preferences": {"type": "array", "items": {"type": "string"}},
-#     },
-#     "required": ["name", "age", "email", "is_active"],
-# }
-
-# # Generate a sample object
-# sample_object = hypothesis_jsonschema.from_schema(schema).example()

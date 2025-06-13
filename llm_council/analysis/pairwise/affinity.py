@@ -9,7 +9,9 @@ from collections import defaultdict
 from llm_council.analysis.visualization import sorted_dict_of_dict
 
 
-def get_affinity_df(judging_df, reference_llm_respondent):
+def get_affinity_df(
+    judging_df, reference_llm_respondent, example_id_column="emobench_id"
+):
     """Returns a dictionary of dataframes.
 
     3 dataframes are returned:
@@ -31,12 +33,12 @@ def get_affinity_df(judging_df, reference_llm_respondent):
         per_judge_preferences[council_member] = win_rates
 
     # Add the council.
-    council_choice = get_council_choice(judging_df, "majority")
+    council_choice = get_council_choice(judging_df, "majority", example_id_column)
     bootstrap_online_elo = compute_mle_elo(council_choice, reference_llm_respondent)
     win_rates = get_win_rate(bootstrap_online_elo, reference_llm_respondent)
     per_judge_preferences["council (majority vote)"] = win_rates
 
-    council_choice = get_council_choice(judging_df, "mean_pooling")
+    council_choice = get_council_choice(judging_df, "mean_pooling", example_id_column)
     bootstrap_online_elo = compute_mle_elo(council_choice, reference_llm_respondent)
     win_rates = get_win_rate(bootstrap_online_elo, reference_llm_respondent)
     per_judge_preferences["council (mean pooling)"] = win_rates

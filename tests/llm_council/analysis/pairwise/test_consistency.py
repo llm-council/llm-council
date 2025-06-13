@@ -47,13 +47,17 @@ def mock_df():
 
 def test_sidewise_consistency(mock_df):
     """Test for sidewise consistency function"""
-    result = get_consistent_votes(mock_df, consistency_fn_name="sidewise")
+    result = get_consistent_votes(
+        mock_df, example_id_column_name="emobench_id", consistency_fn_name="sidewise"
+    )
     assert len(result) == 4
 
 
 def test_strict_consistency(mock_df):
     """Test for strict consistency function"""
-    result = get_consistent_votes(mock_df, consistency_fn_name="strict")
+    result = get_consistent_votes(
+        mock_df, example_id_column_name="emobench_id", consistency_fn_name="strict"
+    )
     assert len(result) == 2
 
 
@@ -77,7 +81,11 @@ def test_no_consistent_votes_strict(mock_df):
             },
         ]
     )
-    result = get_consistent_votes(inconsistent_df, consistency_fn_name="strict")
+    result = get_consistent_votes(
+        inconsistent_df,
+        example_id_column_name="emobench_id",
+        consistency_fn_name="strict",
+    )
     assert len(result) == 0
 
 
@@ -92,14 +100,20 @@ def test_get_consistent_votes_edge_case():
             "pairwise_choice",
         ]
     )
-    result = get_consistent_votes(empty_df, consistency_fn_name="strict")
+    result = get_consistent_votes(
+        empty_df, example_id_column_name="emobench_id", consistency_fn_name="strict"
+    )
     assert result.empty
 
 
 def test_consistency_with_testdata():
     df = pd.read_json("tests/testdata/lmc_ei.jsonl", lines=True, orient="records")
-    result = get_consistent_votes(df, consistency_fn_name="strict")
+    result = get_consistent_votes(
+        df, example_id_column_name="emobench_id", consistency_fn_name="strict"
+    )
     assert len(result) == 992
 
-    result = get_consistent_votes(df, consistency_fn_name="sidewise")
+    result = get_consistent_votes(
+        df, example_id_column_name="emobench_id", consistency_fn_name="sidewise"
+    )
     assert len(result) == 994

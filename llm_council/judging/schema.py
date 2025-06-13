@@ -5,11 +5,11 @@ from llm_council.judging.prompt_builder import DIRECT_ASSESSMENT_JUDGING_BASE_TE
 import json
 
 
-class DirectAssessmentCriteria(BaseModel):
+class Criteria(BaseModel):
     """Defines a single evaluation criterion for direct assessment."""
 
     name: str = Field(..., description="The name of the evaluation criterion.")
-    criteria_statement: str = Field(
+    statement: str = Field(
         ..., description="A detailed description of what is being assessed."
     )
 
@@ -20,7 +20,7 @@ class DirectAssessmentConfig(BaseModel):
     prompt_template: str = Field(
         ..., description="The prompt template used to guide the LLM’s assessment."
     )
-    criteria: List[DirectAssessmentCriteria] = Field(
+    rubric: List[Criteria] = Field(
         ..., description="A list of criteria that define the evaluation dimensions."
     )
     prebuilt_likert_scale: Literal[2, 3, 4, 5, 6, 7] = Field(
@@ -97,6 +97,10 @@ class EvaluationConfig(BaseModel):
         False,
         description="If True, the LLM is prompted to provide a chain-of-thought reasoning before giving its final judgment.",
     )
+    temperature: float = Field(
+        0.0,
+        description="The temperature setting for the LLM judge, controlling the randomness of the output.",
+    )
     config: Union[DirectAssessmentConfig, PairwiseComparisonConfig] = Field(
         ...,
         description="The configuration object, which depends on the evaluation type.",
@@ -110,6 +114,13 @@ class EvaluationConfig(BaseModel):
         """Saves a Pydantic EvaluationConfig object to a JSON file."""
         with open(file_path, "w") as f:
             json.dump(self.dict(), f, indent=4)
+
+    @classmethod
+    def load_config(cls, file_path: str) -> "EvaluationConfig":
+        """Loads an EvaluationConfig object from a JSON file."""
+        with open(file_path, "r") as f:
+            data = json.load(f)
+        return cls.parse_obj(data)
 
 
 def save_config(config: EvaluationConfig, file_path: str):
@@ -133,14 +144,14 @@ DEFAULT_EVALUATION_CONFIG = EvaluationConfig(
     config=DirectAssessmentConfig(
         prompt_template=DIRECT_ASSESSMENT_JUDGING_BASE_TEMPLATE,
         prebuilt_likert_scale=5,
-        criteria=[
-            DirectAssessmentCriteria(
+        rubric=[
+            Criteria(
                 name="Coherence",
-                criteria_statement="The response is coherent.",
+                statement="The response is coherent.",
             ),
-            DirectAssessmentCriteria(
+            Criteria(
                 name="Relevance",
-                criteria_statement="The response is relevant.",
+                statement="The response is relevant.",
             ),
         ],
     ),

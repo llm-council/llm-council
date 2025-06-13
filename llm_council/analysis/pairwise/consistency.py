@@ -52,13 +52,21 @@ CONSISTENCY_FN_REGISTRY = {
 
 def get_consistent_votes(
     df,
-    example_id_column_name="emobench_id",
+    example_id_column_name,
     consistency_fn_name="sidewise",
+    first_completion_by_column_name="first_completion_by",
+    second_completion_by_column_name="second_completion_by",
+    pairwise_choice_column_name="pairwise_choice",
+    llm_judge_column_name="llm_judge",
 ) -> pd.DataFrame:
     """Returns a DataFrame of consistent votes."""
 
     # Get the unique judges.
     judges = list(df["llm_judge"].unique())
+
+    if example_id_column_name is None:
+        # Use the index.
+        example_id_column_name = df.index.name
 
     # Create a map of judge -> (id, first, second) -> row.
     judge_to_votes_map = defaultdict(dict)
@@ -109,10 +117,17 @@ def get_number_of_mode(pd_agg):
     return num_occurrences
 
 
-def get_judge_invariability_df(full_judging_df) -> pd.DataFrame:
+def get_judge_invariability_df(
+    full_judging_df, example_id_column="emobench_id"
+) -> pd.DataFrame:
     consolidated_reps = (
         full_judging_df.groupby(
-            ["emobench_id", "llm_judge", "first_completion_by", "second_completion_by"]
+            [
+                example_id_column,
+                "llm_judge",
+                "first_completion_by",
+                "second_completion_by",
+            ]
         )
         .agg(
             # The most common pairwise choice over reps.
@@ -150,12 +165,11 @@ def get_judge_invariability_summary_df(conslidated_reps_df) -> pd.DataFrame:
     )
 
 
-def get_judge_profile_stats(judge_choice):
+def get_judge_profile_stats(judge_choice, example_id_column="emobench_id"):
     # Collapse pure repetitions via mode.
     repetition_collapsed_judging_df = (
         judge_choice.groupby(
-            # ["emobench_id", "llm_judge", "first_completion_by", "second_completion_by"]
-            ["emobench_id", "first_completion_by", "second_completion_by"]
+            [example_id_column, "first_completion_by", "second_completion_by"]
         )
         .agg(
             pairwise_choice=pd.NamedAgg(
@@ -167,8 +181,7 @@ def get_judge_profile_stats(judge_choice):
     # Aggregate pure repetitions by list.
     repetition_aggregated_judging_df = (
         judge_choice.groupby(
-            # ["emobench_id", "llm_judge", "first_completion_by", "second_completion_by"]
-            ["emobench_id", "first_completion_by", "second_completion_by"]
+            [example_id_column, "first_completion_by", "second_completion_by"]
         )
         .agg(
             pairwise_choice=pd.NamedAgg(column="pairwise_choice", aggfunc=list),
@@ -181,7 +194,7 @@ def get_judge_profile_stats(judge_choice):
     for i, row in repetition_collapsed_judging_df.iterrows():
         votes_map[
             (
-                row["emobench_id"],
+                row[example_id_column],
                 row["first_completion_by"],
                 row["second_completion_by"],
             )
@@ -192,7 +205,7 @@ def get_judge_profile_stats(judge_choice):
     for i, row in repetition_aggregated_judging_df.iterrows():
         repped_votes_map[
             (
-                row["emobench_id"],
+                row[example_id_column],
                 row["first_completion_by"],
                 row["second_completion_by"],
             )

@@ -71,34 +71,34 @@ def get_judge_to_judge_agreement(judge1_votes, judge2_votes, method):
         raise ValueError(f"Unknown judge_to_judge_agreement method: {method}")
 
 
-def get_judge_agreement_df(df, agreement_method):
+def get_judge_agreement_df(df, agreement_method, example_id_column="emobench_id"):
     judges = list(df["llm_judge"].unique())
 
     judge_to_votes_map = defaultdict(dict)
     for i, row in df.iterrows():
         judge_to_votes_map[row["llm_judge"]][
             (
-                row["emobench_id"],
+                row[example_id_column],
                 row["first_completion_by"],
                 row["second_completion_by"],
             )
         ] = row["pairwise_choice"]
 
     # Add the council.
-    council_choice = get_council_choice(df, "majority")
+    council_choice = get_council_choice(df, "majority", example_id_column)
     for i, row in council_choice.iterrows():
         judge_to_votes_map["council (by majority vote)"][
             (
-                row["emobench_id"],
+                row[example_id_column],
                 row["first_completion_by"],
                 row["second_completion_by"],
             )
         ] = row["pairwise_choice"]
-    council_choice = get_council_choice(df, "mean_pooling")
+    council_choice = get_council_choice(df, "mean_pooling", example_id_column)
     for i, row in council_choice.iterrows():
         judge_to_votes_map["council (by mean pooling)"][
             (
-                row["emobench_id"],
+                row[example_id_column],
                 row["first_completion_by"],
                 row["second_completion_by"],
             )
@@ -129,9 +129,13 @@ def get_judge_agreement_df(df, agreement_method):
     return judge_to_judge_agreement_df
 
 
-def get_judge_agreement_map(df) -> dict[str, pd.DataFrame]:
+def get_judge_agreement_map(
+    df, example_id_column="emobench_id"
+) -> dict[str, pd.DataFrame]:
     judge_agreement_dfs = {}
     for agreement_method in AGREEMENT_METHODS:
-        judge_agreement_df = get_judge_agreement_df(df, agreement_method)
+        judge_agreement_df = get_judge_agreement_df(
+            df, agreement_method, example_id_column
+        )
         judge_agreement_dfs[agreement_method] = judge_agreement_df
     return judge_agreement_dfs

@@ -35,10 +35,12 @@ def get_mean_pooling_choice(agg_list):
     return value_to_choice_map[round(np.mean(numeric_values))]
 
 
-def get_council_choice(df, council_aggregation_method):
+def get_council_choice(df, council_aggregation_method, example_id_column="emobench_id"):
     if council_aggregation_method == "majority":
         df_aggregated = (
-            df.groupby(["emobench_id", "first_completion_by", "second_completion_by"])
+            df.groupby(
+                [example_id_column, "first_completion_by", "second_completion_by"]
+            )
             .agg(
                 pairwise_choice=pd.NamedAgg(
                     column="pairwise_choice", aggfunc=lambda x: x.mode()[0]
@@ -50,7 +52,9 @@ def get_council_choice(df, council_aggregation_method):
     if council_aggregation_method == "mean_pooling":
         # Council, by mean pooling.
         df_aggregated = (
-            df.groupby(["emobench_id", "first_completion_by", "second_completion_by"])
+            df.groupby(
+                [example_id_column, "first_completion_by", "second_completion_by"]
+            )
             .agg(
                 pairwise_choice=pd.NamedAgg(
                     column="pairwise_choice", aggfunc=get_mean_pooling_choice
