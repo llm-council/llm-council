@@ -2,53 +2,6 @@ from pydantic import BaseModel, Field, create_model
 from typing import Annotated, Dict, Type, Literal, get_args, get_origin
 
 
-class BaseSchema(BaseModel):
-
-    @staticmethod
-    def method(*args, **kwargs):
-        pass
-
-
-class ReasoningThenAnswer(BaseSchema):
-    reasoning: str
-    answer: str
-
-    @staticmethod
-    def method(reasoning: Annotated[str, ""], answer: Annotated[str, ""]):
-        pass
-
-
-class AnswerThenReasoning(BaseSchema):
-    answer: str
-    reasoning: str
-
-    @staticmethod
-    def method(answer: Annotated[str, ""], reaonsing: Annotated[str, ""]):
-        pass
-
-
-class AnswerOnly(BaseSchema):
-    answer: str
-
-    @staticmethod
-    def method(answer: Annotated[str, ""]):
-        pass
-
-
-class User(BaseSchema):
-    name: str
-    age: int
-
-
-class DirectAssessmentCriteria(BaseSchema):
-    name: str
-    value: int
-
-
-class MultipleDirectAssessmentCriteria(BaseSchema):
-    criteria: Dict[str, DirectAssessmentCriteria]
-
-
 PAIRWISE_COMPARISON_LABEL_MAP = {
     2: """[[A>B]]: The first response better.
 [[B>A]]: The second response is better.
@@ -135,12 +88,3 @@ def create_dynamic_schema(eval_config) -> Type[BaseModel]:
     schema_class = create_model("DynamicDirectAssessmentSchema", **fields)
 
     return schema_class
-
-
-STRUCTURED_OUTPUT_REGISTRY: Dict[str, Type[BaseSchema]] = {
-    "reasoning_then_answer": ReasoningThenAnswer,
-    "answer_then_reasoning": AnswerThenReasoning,
-    "answer_only": AnswerOnly,
-    "test_user": User,
-    "direct_assessment": MultipleDirectAssessmentCriteria,
-}

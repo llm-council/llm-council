@@ -1,11 +1,10 @@
 from llm_council.judging.schema import (
     EvaluationConfig,
     DirectAssessmentConfig,
-    DirectAssessmentCriteria,
+    Criteria,
     DEFAULT_EVALUATION_CONFIG,
 )
 from llm_council.structured_outputs import create_dynamic_schema
-from llm_council.providers.openai_provider import OpenAIProvider
 from tqdm.asyncio import tqdm
 
 USER_PROMPT = """I'm Sarah, and I've always been close to my younger brother, Alex. We're only two years apart, and I've always felt a sense of responsibility to look out for him. Last week, I was helping him with his homework when he broke down in tears. At first, I thought it was just frustration with his math problems, but then he told me that he's been getting bullied at school.

@@ -1,23 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-
-FAMILY_COLORS = {
-    "openai": "mediumseagreen",
-    "anthropic": "burlywood",
-    "mistral": "darkorange",
-    "google": "skyblue",
-    "meta-llama": "magenta",
-    "deepseek": "royalblue",
-    "cohere": "darkslategray",
-    "qwen": "slateblue",
-    "council": "gold",
-    "amazon": "orange",
-    "x-ai": "black",
-    "01-ai": "teal",
-    "recursal": "darkslateblue",
-}
+from llm_council.constants import FAMILY_COLORS
 
 
 def sorted_dict_of_dict(data):
