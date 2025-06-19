@@ -180,7 +180,7 @@ def sample_llm_council_members(llm_council_members, k, n):
 
 def filter_ratings_by_allowlist(df, llm_judge_allowlist):
     """Filter ratings by a list of allowed judges."""
-    return df[df["llm_judge"].isin(llm_judge_allowlist)]
+    return df[df["judge_model"].isin(llm_judge_allowlist)]
 
 
 def get_relevant_ratings_for_trial(df, emo_bench_ids, llm_judges):
@@ -222,7 +222,7 @@ def get_adversarial_judge_ratings(df):
     ].drop_duplicates()
 
     # Assign fixed values
-    adversarial_judge_df["llm_judge"] = "adversarial"
+    adversarial_judge_df["judge_model"] = "adversarial"
     adversarial_judge_df["metadata"] = None
 
     # Assign random pairwise choices.
@@ -469,7 +469,7 @@ all_jury_ablation_stats = []
 for num_emobench_ids in tqdm(range(10, 101, 10), desc="Processing Ablation Trials"):
     jury_ablation_stats = get_jury_ablation_stats(
         df=df,
-        unique_council_members=df["llm_judge"].unique(),
+        unique_council_members=df["judge_model"].unique(),
         num_trials=100,
         num_adversarial_judges=None,
         num_adversarial_judges_frac=None,

@@ -1,14 +1,14 @@
 {
-    "council (no agg)":{
-        "length_bias":0.321115771
+    "council (no agg)": {
+        "length_bias": 0.321115771
     },
-    "council (by majority vote)":{
-        "length_bias":0.321115771
+    "council/majority-vote": {
+        "length_bias": 0.321115771
     },
-    "council (by mean pooling)":{
-        "length_bias":0.321115771
+    "council/mean-pooling": {
+        "length_bias": 0.321115771
     },
-    "gpt-4o-mini":{
-        "length_bias":0.321115771
+    "gpt-4o-mini": {
+        "length_bias": 0.321115771
     }
 }

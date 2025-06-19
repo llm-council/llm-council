@@ -115,10 +115,10 @@ def get_length_biases_df(
     length_biases = {}
 
     # Everyone.
-    length_biases["council (no aggregation)"] = get_length_bias(
+    length_biases["council/no-aggregation"] = get_length_bias(
         judging_df,
         id_respondent_to_num_words,
-        "council (no aggregation)",
+        "council/no-aggregation",
         "logdir",
         example_id_column=example_id_column,
     )
@@ -127,10 +127,10 @@ def get_length_biases_df(
     council_choice_majority = get_council_choice(
         judging_df, "majority", example_id_column=example_id_column
     )
-    length_biases["council (majority vote)"] = get_length_bias(
+    length_biases["council/majority-vote"] = get_length_bias(
         council_choice_majority,
         id_respondent_to_num_words,
-        "council (majority vote)",
+        "council/majority-vote",
         "logdir",
         example_id_column=example_id_column,
     )
@@ -139,17 +139,17 @@ def get_length_biases_df(
     council_choice_mean_pooling = get_council_choice(
         judging_df, "mean_pooling", example_id_column=example_id_column
     )
-    length_biases["council (mean pooling)"] = get_length_bias(
+    length_biases["council/mean-pooling"] = get_length_bias(
         council_choice_mean_pooling,
         id_respondent_to_num_words,
-        "council (mean pooling)",
+        "council/mean-pooling",
         "logdir",
         example_id_column=example_id_column,
     )
 
     # For individual judges.
-    for judge in judging_df["llm_judge"].unique():
-        judge_choice = judging_df[judging_df["llm_judge"] == judge]
+    for judge in judging_df["judge_model"].unique():
+        judge_choice = judging_df[judging_df["judge_model"] == judge]
         length_biases[judge] = get_length_bias(
             judge_choice,
             id_respondent_to_num_words,

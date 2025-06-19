@@ -14,28 +14,28 @@ from llm_council.constants import MAJOR_A_WIN, MINOR_B_WIN, TIE
 def mock_df():
     data = [
         {
-            "llm_judge": "judge1",
+            "judge_model": "judge1",
             "emobench_id": "example1",
             "first_completion_by": "modelA",
             "second_completion_by": "modelB",
             "pairwise_choice": MAJOR_A_WIN,
         },
         {
-            "llm_judge": "judge1",
+            "judge_model": "judge1",
             "emobench_id": "example1",
             "first_completion_by": "modelB",
             "second_completion_by": "modelA",
             "pairwise_choice": MINOR_B_WIN,
         },
         {
-            "llm_judge": "judge2",
+            "judge_model": "judge2",
             "emobench_id": "example2",
             "first_completion_by": "modelC",
             "second_completion_by": "modelD",
             "pairwise_choice": TIE,
         },
         {
-            "llm_judge": "judge2",
+            "judge_model": "judge2",
             "emobench_id": "example2",
             "first_completion_by": "modelD",
             "second_completion_by": "modelC",
@@ -66,14 +66,14 @@ def test_no_consistent_votes_strict(mock_df):
     inconsistent_df = pd.DataFrame(
         [
             {
-                "llm_judge": "judge1",
+                "judge_model": "judge1",
                 "emobench_id": "example1",
                 "first_completion_by": "modelA",
                 "second_completion_by": "modelB",
                 "pairwise_choice": "MAJOR_A_WIN",
             },
             {
-                "llm_judge": "judge1",
+                "judge_model": "judge1",
                 "emobench_id": "example1",
                 "first_completion_by": "modelB",
                 "second_completion_by": "modelA",
@@ -93,7 +93,7 @@ def test_get_consistent_votes_edge_case():
     """Test with minimal or empty dataframe"""
     empty_df = pd.DataFrame(
         columns=[
-            "llm_judge",
+            "judge_model",
             "emobench_id",
             "first_completion_by",
             "second_completion_by",

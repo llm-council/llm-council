@@ -1,46 +1,46 @@
 {
-    "openai:\/\/gpt-4o-mini-2024-07-18":{
-        "anthropic:\/\/claude-3-haiku-20240307":0.391,
-        "anthropic:\/\/claude-3-opus-20240229":0.5126,
-        "mistral:\/\/open-mixtral-8x22b":0.3781,
-        "openai:\/\/gpt-4-0613":0.2681,
-        "openai:\/\/gpt-4o-2024-05-13":0.8803,
-        "together:\/\/Qwen\/Qwen1.5-110B-Chat":0.7661,
-        "together:\/\/Qwen\/Qwen1.5-32B-Chat":0.5,
-        "together:\/\/meta-llama\/Llama-3-70b-chat-hf":0.8487,
-        "together:\/\/meta-llama\/Llama-3-8b-chat-hf":0.5419
+    "openai:\/\/gpt-4o-mini-2024-07-18": {
+        "anthropic:\/\/claude-3-haiku-20240307": 0.391,
+        "anthropic:\/\/claude-3-opus-20240229": 0.5126,
+        "mistral:\/\/open-mixtral-8x22b": 0.3781,
+        "openai:\/\/gpt-4-0613": 0.2681,
+        "openai:\/\/gpt-4o-2024-05-13": 0.8803,
+        "together:\/\/Qwen\/Qwen1.5-110B-Chat": 0.7661,
+        "together:\/\/Qwen\/Qwen1.5-32B-Chat": 0.5,
+        "together:\/\/meta-llama\/Llama-3-70b-chat-hf": 0.8487,
+        "together:\/\/meta-llama\/Llama-3-8b-chat-hf": 0.5419
     },
-    "council (by majority vote)":{
-        "anthropic:\/\/claude-3-haiku-20240307":0.391,
-        "anthropic:\/\/claude-3-opus-20240229":0.5126,
-        "mistral:\/\/open-mixtral-8x22b":0.3781,
-        "openai:\/\/gpt-4-0613":0.2681,
-        "openai:\/\/gpt-4o-2024-05-13":0.8803,
-        "together:\/\/Qwen\/Qwen1.5-110B-Chat":0.7661,
-        "together:\/\/Qwen\/Qwen1.5-32B-Chat":0.5,
-        "together:\/\/meta-llama\/Llama-3-70b-chat-hf":0.8487,
-        "together:\/\/meta-llama\/Llama-3-8b-chat-hf":0.5419
+    "council/majority-vote": {
+        "anthropic:\/\/claude-3-haiku-20240307": 0.391,
+        "anthropic:\/\/claude-3-opus-20240229": 0.5126,
+        "mistral:\/\/open-mixtral-8x22b": 0.3781,
+        "openai:\/\/gpt-4-0613": 0.2681,
+        "openai:\/\/gpt-4o-2024-05-13": 0.8803,
+        "together:\/\/Qwen\/Qwen1.5-110B-Chat": 0.7661,
+        "together:\/\/Qwen\/Qwen1.5-32B-Chat": 0.5,
+        "together:\/\/meta-llama\/Llama-3-70b-chat-hf": 0.8487,
+        "together:\/\/meta-llama\/Llama-3-8b-chat-hf": 0.5419
     },
-    "council (by mean pooling)":{
-        "anthropic:\/\/claude-3-haiku-20240307":0.391,
-        "anthropic:\/\/claude-3-opus-20240229":0.5126,
-        "mistral:\/\/open-mixtral-8x22b":0.3781,
-        "openai:\/\/gpt-4-0613":0.2681,
-        "openai:\/\/gpt-4o-2024-05-13":0.8803,
-        "together:\/\/Qwen\/Qwen1.5-110B-Chat":0.7661,
-        "together:\/\/Qwen\/Qwen1.5-32B-Chat":0.5,
-        "together:\/\/meta-llama\/Llama-3-70b-chat-hf":0.8487,
-        "together:\/\/meta-llama\/Llama-3-8b-chat-hf":0.5419
+    "council/mean-pooling": {
+        "anthropic:\/\/claude-3-haiku-20240307": 0.391,
+        "anthropic:\/\/claude-3-opus-20240229": 0.5126,
+        "mistral:\/\/open-mixtral-8x22b": 0.3781,
+        "openai:\/\/gpt-4-0613": 0.2681,
+        "openai:\/\/gpt-4o-2024-05-13": 0.8803,
+        "together:\/\/Qwen\/Qwen1.5-110B-Chat": 0.7661,
+        "together:\/\/Qwen\/Qwen1.5-32B-Chat": 0.5,
+        "together:\/\/meta-llama\/Llama-3-70b-chat-hf": 0.8487,
+        "together:\/\/meta-llama\/Llama-3-8b-chat-hf": 0.5419
     },
-    "council (no agg)":{
-        "anthropic:\/\/claude-3-haiku-20240307":0.391,
-        "anthropic:\/\/claude-3-opus-20240229":0.5126,
-        "mistral:\/\/open-mixtral-8x22b":0.3781,
-        "openai:\/\/gpt-4-0613":0.2681,
-        "openai:\/\/gpt-4o-2024-05-13":0.8803,
-        "together:\/\/Qwen\/Qwen1.5-110B-Chat":0.7661,
-        "together:\/\/Qwen\/Qwen1.5-32B-Chat":0.5,
-        "together:\/\/meta-llama\/Llama-3-70b-chat-hf":0.8487,
-        "together:\/\/meta-llama\/Llama-3-8b-chat-hf":0.5419
+    "council (no agg)": {
+        "anthropic:\/\/claude-3-haiku-20240307": 0.391,
+        "anthropic:\/\/claude-3-opus-20240229": 0.5126,
+        "mistral:\/\/open-mixtral-8x22b": 0.3781,
+        "openai:\/\/gpt-4-0613": 0.2681,
+        "openai:\/\/gpt-4o-2024-05-13": 0.8803,
+        "together:\/\/Qwen\/Qwen1.5-110B-Chat": 0.7661,
+        "together:\/\/Qwen\/Qwen1.5-32B-Chat": 0.5,
+        "together:\/\/meta-llama\/Llama-3-70b-chat-hf": 0.8487,
+        "together:\/\/meta-llama\/Llama-3-8b-chat-hf": 0.5419
     }
 }

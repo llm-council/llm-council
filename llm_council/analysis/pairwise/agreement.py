@@ -72,11 +72,11 @@ def get_judge_to_judge_agreement(judge1_votes, judge2_votes, method):
 
 
 def get_judge_agreement_df(df, agreement_method, example_id_column="emobench_id"):
-    judges = list(df["llm_judge"].unique())
+    judges = list(df["judge_model"].unique())
 
     judge_to_votes_map = defaultdict(dict)
     for i, row in df.iterrows():
-        judge_to_votes_map[row["llm_judge"]][
+        judge_to_votes_map[row["judge_model"]][
             (
                 row[example_id_column],
                 row["first_completion_by"],
@@ -87,7 +87,7 @@ def get_judge_agreement_df(df, agreement_method, example_id_column="emobench_id"
     # Add the council.
     council_choice = get_council_choice(df, "majority", example_id_column)
     for i, row in council_choice.iterrows():
-        judge_to_votes_map["council (by majority vote)"][
+        judge_to_votes_map["council/majority-vote"][
             (
                 row[example_id_column],
                 row["first_completion_by"],
@@ -96,7 +96,7 @@ def get_judge_agreement_df(df, agreement_method, example_id_column="emobench_id"
         ] = row["pairwise_choice"]
     council_choice = get_council_choice(df, "mean_pooling", example_id_column)
     for i, row in council_choice.iterrows():
-        judge_to_votes_map["council (by mean pooling)"][
+        judge_to_votes_map["council/mean-pooling"][
             (
                 row[example_id_column],
                 row["first_completion_by"],
@@ -106,12 +106,12 @@ def get_judge_agreement_df(df, agreement_method, example_id_column="emobench_id"
 
     # judge -> judge -> agreement (float)
     judge_to_judge_agreement = defaultdict(dict)
-    for judge1 in judges + ["council (by majority vote)", "council (by mean pooling)"]:
+    for judge1 in judges + ["council/majority-vote", "council/mean-pooling"]:
         judge1_votes = judge_to_votes_map[judge1]
 
         for judge2 in judges + [
-            "council (by majority vote)",
-            "council (by mean pooling)",
+            "council/majority-vote",
+            "council/mean-pooling",
         ]:
             if judge1 == judge2:
                 continue

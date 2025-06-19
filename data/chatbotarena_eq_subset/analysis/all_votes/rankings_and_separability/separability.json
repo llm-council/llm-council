@@ -1,14 +1,14 @@
 {
-    "separability":{
-        "council (no aggregation)":66.6666666667,
-        "council (by majority vote)":66.6666666667,
-        "council (by mean pooling)":66.6666666667,
-        "gpt-4o-mini":66.6666666667
+    "separability": {
+        "council/no-aggregation": 66.6666666667,
+        "council/majority-vote": 66.6666666667,
+        "council/mean-pooling": 66.6666666667,
+        "gpt-4o-mini": 66.6666666667
     },
-    "family":{
-        "council (no aggregation)":"Council",
-        "council (by majority vote)":"Council",
-        "council (by mean pooling)":"Council",
-        "gpt-4o-mini":null
+    "family": {
+        "council/no-aggregation": "Council",
+        "council/majority-vote": "Council",
+        "council/mean-pooling": "Council",
+        "gpt-4o-mini": null
     }
 }

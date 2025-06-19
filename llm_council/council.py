@@ -19,6 +19,12 @@ from llm_council.structured_outputs import (
 )
 from openai import AsyncOpenAI
 import re
+from llm_council.analysis.pairwise.bradley_terry import bradley_terry_analysis
+from llm_council.analysis.visualization import plot_heatmap
+from llm_council.analysis.visualization import plot_arena_hard_elo_stats
+from llm_council.analysis.pairwise.separability import (
+    analyze_rankings_separability_polarization,
+)
 
 
 def process_pairwise_choice(raw_pairwise_choice: str) -> str:
@@ -423,7 +429,7 @@ class LanguageModelCouncil:
             )
         return pd.DataFrame(judgments)
 
-    def get_judgments_df(self) -> pd.DataFrame:
+    def get_judging_df(self) -> pd.DataFrame:
         """Returns the judgments made by the council."""
         return pd.DataFrame(self.judgments)
 
@@ -454,6 +460,53 @@ class LanguageModelCouncil:
             self.judgments.append(row)
 
         return completions_df, judging_df
+
+    def leaderboard(self):
+        if self.eval_config.type == "pairwise_comparison":
+            judging_df = self.get_judging_df()
+            rankings_results = analyze_rankings_separability_polarization(
+                judging_df,
+                reference_llm_respondent="google/gemini-2.5-flash-preview-05-20",
+                bootstrap_rounds=10,
+                include_individual_judges=True,
+                include_council_majority=True,
+                include_council_mean_pooling=True,
+                include_council_no_aggregation=True,
+                example_id_column="user_prompt",
+            )
+
+            plot_arena_hard_elo_stats(
+                rankings_results["council/no-aggregation"]["elo_scores"],
+                "Rankings",
+                None,
+                show=True,
+            )
+        else:
+            raise ValueError(
+                "Leaderboard can only be generated for pairwise comparison evaluations."
+            )
+
+    def win_rate_heatmap(self):
+        if self.eval_config.type != "pairwise_comparison":
+            raise ValueError(
+                "Win rate heatmap can only be generated for pairwise comparison evaluations."
+            )
+        judging_df = self.get_judging_df()
+        expected_win_rate_map = bradley_terry_analysis(judging_df)
+        num_models = len(self.models)
+        figsize = (max(5, num_models), max(4, num_models))
+
+        plot_heatmap(
+            expected_win_rate_map,
+            ylabel="Respondent",
+            xlabel="vs. Respondent",
+            vmin=0,
+            vmax=1,
+            cmap="coolwarm",
+            outfile=None,
+            figsize=figsize,
+            font_size=8,
+        )
 
     def save(self, outdir):
         # Save all artifacts to a directory.
@@ -492,12 +545,16 @@ class LanguageModelCouncil:
             user_prompts.jsonl
             eval_config.json
         """
+        # If indir is not an absolute path, make it relative to the current working directory
+        if not os.path.isabs(indir):
+            indir = os.path.abspath(os.path.join(os.getcwd(), indir))
+
         # Load LLMs
         with open(os.path.join(indir, "models.json"), "r") as f:
-            llms = json.load(f)
+            models = json.load(f)
 
         # Load prompts
-        with open(os.path.join(indir, "prompts.json"), "r") as f:
+        with open(os.path.join(indir, "user_prompts.json"), "r") as f:
             user_prompts = json.load(f)
 
         # Load completions
@@ -516,7 +573,7 @@ class LanguageModelCouncil:
         )
 
         # Create the instance
-        council = LanguageModelCouncil(llms=llms, eval_config=eval_config)
+        council = LanguageModelCouncil(models=models, eval_config=eval_config)
         council.user_prompts = user_prompts
         council.completions = completions
         council.judgments = judgments

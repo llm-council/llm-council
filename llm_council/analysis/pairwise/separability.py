@@ -147,6 +147,11 @@ def get_bootstrap_result(
 ):
     rows = []
     for i in tqdm(range(num_rounds), desc="bootstrap"):
+        if len(df) < 10:
+            # If there are fewer than 10 rows, we cannot bootstrap.
+            rows.append(func_compute_elo(df, reference_llm_respondent))
+            continue
+
         rows.append(
             func_compute_elo(
                 df.sample(n=len(df), replace=True),
@@ -237,8 +242,8 @@ def calculate_non_overlapping_percentage(
     return percentage
 
 
-def filter_ratings_by_allowlist(df, llm_judge_allowlist):
-    return df[df["llm_judge"].isin(llm_judge_allowlist)]
+def filter_ratings_by_allowlist(df, judge_model_allowlist):
+    return df[df["judge_model"].isin(judge_model_allowlist)]
 
 
 def get_elo_rankings(judging_df, reference_llm_respondent, bootstrap_rounds):
@@ -269,6 +274,7 @@ def analyze_rankings_separability_polarization(
     include_council_majority=True,
     include_council_mean_pooling=False,
     include_council_no_aggregation=False,
+    example_id_column="emobench_id",
 ) -> dict:
     """Produces rankings based on ELO scores, and uses that to compute separability and polarization."""
     # Map of judge to its ELO rankings.
@@ -276,30 +282,32 @@ def analyze_rankings_separability_polarization(
 
     # Everyone's vote.
     if include_council_no_aggregation:
-        judge_to_elo_rankings["council (no aggregation)"] = get_elo_rankings(
+        judge_to_elo_rankings["council/no-aggregation"] = get_elo_rankings(
             judging_df, reference_llm_respondent, bootstrap_rounds
         )
 
     # Council, with majority aggregation.
     if include_council_majority:
-        council_choice = get_council_choice(judging_df, "majority")
-        judge_to_elo_rankings["council (majority vote)"] = get_elo_rankings(
+        council_choice = get_council_choice(judging_df, "majority", example_id_column)
+        judge_to_elo_rankings["council/majority-vote"] = get_elo_rankings(
             council_choice, reference_llm_respondent, bootstrap_rounds
         )
 
     # Council, with mean pooling aggregation.
     if include_council_mean_pooling:
-        council_choice = get_council_choice(judging_df, "mean_pooling")
-        judge_to_elo_rankings["council (mean pooling)"] = get_elo_rankings(
+        council_choice = get_council_choice(
+            judging_df, "mean_pooling", example_id_column
+        )
+        judge_to_elo_rankings["council/mean-pooling"] = get_elo_rankings(
             council_choice, reference_llm_respondent, bootstrap_rounds
         )
 
     # Individual council members.
     if include_individual_judges:
-        llm_judges = list(judging_df["llm_judge"].unique())
-        for llm_judge in llm_judges:
-            judge_choice = filter_ratings_by_allowlist(judging_df, [llm_judge])
-            judge_to_elo_rankings[llm_judge] = get_elo_rankings(
+        judge_models = list(judging_df["judge_model"].unique())
+        for judge_model in judge_models:
+            judge_choice = filter_ratings_by_allowlist(judging_df, [judge_model])
+            judge_to_elo_rankings[judge_model] = get_elo_rankings(
                 judge_choice, reference_llm_respondent, bootstrap_rounds
             )
 

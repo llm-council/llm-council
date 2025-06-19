@@ -1,14 +1,23 @@
 import pandas as pd
 import seaborn as sns
-from llm_council.members.membership import FULLY_QUALIFIED_NAME_TO_LLM_MAP
 import matplotlib.pyplot as plt
 
 
-def get_plot_friendly_name(fully_qualified_name):
-    if fully_qualified_name in FULLY_QUALIFIED_NAME_TO_LLM_MAP:
-        return FULLY_QUALIFIED_NAME_TO_LLM_MAP[fully_qualified_name]
-    else:
-        return fully_qualified_name
+FAMILY_COLORS = {
+    "openai": "mediumseagreen",
+    "anthropic": "burlywood",
+    "mistral": "darkorange",
+    "google": "skyblue",
+    "meta-llama": "magenta",
+    "deepseek": "royalblue",
+    "cohere": "darkslategray",
+    "qwen": "slateblue",
+    "council": "gold",
+    "amazon": "orange",
+    "x-ai": "black",
+    "01-ai": "teal",
+    "recursal": "darkslateblue",
+}
 
 
 def sorted_dict_of_dict(data):
@@ -32,31 +41,30 @@ def sorted_dict_of_dict(data):
     if "council" in sorted_inner_keys:
         sorted_inner_keys.remove("council")
         sorted_inner_keys.append("council")
-    if "council (by majority vote)" in sorted_outer_keys:
-        sorted_outer_keys.remove("council (by majority vote)")
-        sorted_outer_keys.append("council (by majority vote)")
-    if "council (by mean pooling)" in sorted_outer_keys:
-        sorted_outer_keys.remove("council (by mean pooling)")
-        sorted_outer_keys.append("council (by mean pooling)")
-    if "council (no aggregation)" in sorted_outer_keys:
-        sorted_outer_keys.remove("council (no aggregation)")
-        sorted_outer_keys.append("council (no aggregation)")
-    if "council (by majority vote)" in sorted_inner_keys:
-        sorted_inner_keys.remove("council (by majority vote)")
-        sorted_inner_keys.append("council (by majority vote)")
-    if "council (by mean pooling)" in sorted_inner_keys:
-        sorted_inner_keys.remove("council (by mean pooling)")
-        sorted_inner_keys.append("council (by mean pooling)")
-    if "council (no aggregation)" in sorted_inner_keys:
-        sorted_inner_keys.remove("council (no aggregation)")
-        sorted_inner_keys.append("council (no aggregation)")
+    if "council/majority-vote" in sorted_outer_keys:
+        sorted_outer_keys.remove("council/majority-vote")
+        sorted_outer_keys.append("council/majority-vote")
+    if "council/mean-pooling" in sorted_outer_keys:
+        sorted_outer_keys.remove("council/mean-pooling")
+        sorted_outer_keys.append("council/mean-pooling")
+    if "council/no-aggregation" in sorted_outer_keys:
+        sorted_outer_keys.remove("council/no-aggregation")
+        sorted_outer_keys.append("council/no-aggregation")
+    if "council/majority-vote" in sorted_inner_keys:
+        sorted_inner_keys.remove("council/majority-vote")
+        sorted_inner_keys.append("council/majority-vote")
+    if "council/mean-pooling" in sorted_inner_keys:
+        sorted_inner_keys.remove("council/mean-pooling")
+        sorted_inner_keys.append("council/mean-pooling")
+    if "council/no-aggregation" in sorted_inner_keys:
+        sorted_inner_keys.remove("council/no-aggregation")
+        sorted_inner_keys.append("council/no-aggregation")
 
     final_structure = {}
     for outer_key in sorted_outer_keys:
         # Sort the inner dictionary by the sorted outer keys for consistent ordering
-        final_structure[get_plot_friendly_name(outer_key)] = {
-            get_plot_friendly_name(inner_key): data[outer_key].get(inner_key)
-            for inner_key in sorted_inner_keys
+        final_structure[outer_key] = {
+            inner_key: data[outer_key].get(inner_key) for inner_key in sorted_inner_keys
         }
 
     return final_structure
@@ -116,4 +124,56 @@ def plot_heatmap(
     if outfile:
         plt.savefig(outfile)
     plt.show()
+    plt.close()
+
+
+def plot_arena_hard_elo_stats(stats, title, outfile, show=False):
+    # Mapping and error calculations
+    stats["family"] = stats["model"].apply(lambda x: x.split("/")[0])
+    stats["lower_error"] = stats["score"] - stats["lower"]
+    stats["upper_error"] = stats["upper"] - stats["score"]
+    errors = stats[["lower_error", "upper_error"]].T.values
+
+    # Create the plot with larger fonts
+    # Dynamically set figure height based on number of models (entries)
+    n_models = len(stats)
+    height = max(4, min(0.6 * n_models + 2, 16))  # min 4, max 16, scale with n_models
+    plt.figure(figsize=(10, height))
+
+    # Increase font size globally
+    plt.rcParams.update({"font.size": 12})
+
+    ax = sns.barplot(
+        data=stats,
+        y="model",
+        x="score",
+        hue="family",
+        palette=FAMILY_COLORS,
+    )
+
+    # Add error bars
+    for i, (score, error) in enumerate(zip(stats["score"], errors.T)):
+        try:
+            ax.errorbar(
+                score, i, xerr=[error[:1], error[1:]], fmt="none", c="black", capsize=5
+            )
+        except Exception as e:
+            print(
+                f"Error bars aren't valid: {error[:1], error[1:]}. This can happen due to bad bootstrap sampling, particularly in low data scenarios. Skipping."
+            )
+        plt.text(score + error[1:] + 1, i, f"{score}", va="center", color="black")
+
+    plt.title(title)
+    plt.xlabel("Win Rate")
+    plt.ylabel("")
+    plt.grid(axis="x", linestyle="--")
+    plt.legend(title="Family", loc="center left", bbox_to_anchor=(1, 0.5), fontsize=16)
+    plt.xlim(right=stats["score"].max() + 20)
+    plt.tight_layout()
+
+    # Save to file if specified
+    if outfile:
+        plt.savefig(outfile)
+    if show:
+        plt.show()
     plt.close()

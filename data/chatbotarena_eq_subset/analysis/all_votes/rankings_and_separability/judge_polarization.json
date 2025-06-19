@@ -1,14 +1,14 @@
 {
-    "council (no agg)":{
-        "polarization":48.69
+    "council (no agg)": {
+        "polarization": 48.69
     },
-    "council (by majority vote)":{
-        "polarization":48.69
+    "council/majority-vote": {
+        "polarization": 48.69
     },
-    "council (by mean pooling)":{
-        "polarization":48.69
+    "council/mean-pooling": {
+        "polarization": 48.69
     },
-    "openai:\/\/gpt-4o-mini-2024-07-18":{
-        "polarization":48.69
+    "openai:\/\/gpt-4o-mini-2024-07-18": {
+        "polarization": 48.69
     }
 }

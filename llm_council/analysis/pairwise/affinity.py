@@ -20,7 +20,7 @@ def get_affinity_df(
     - self_enhancement_bias: judge -> bias
     """
     per_judge_preferences = {}
-    council_members = list(judging_df["llm_judge"].unique())
+    council_members = list(judging_df["judge_model"].unique())
     for council_member in council_members:
         filtered_df = filter_ratings_by_allowlist(judging_df, [council_member])
 
@@ -36,17 +36,17 @@ def get_affinity_df(
     council_choice = get_council_choice(judging_df, "majority", example_id_column)
     bootstrap_online_elo = compute_mle_elo(council_choice, reference_llm_respondent)
     win_rates = get_win_rate(bootstrap_online_elo, reference_llm_respondent)
-    per_judge_preferences["council (majority vote)"] = win_rates
+    per_judge_preferences["council/majority-vote"] = win_rates
 
     council_choice = get_council_choice(judging_df, "mean_pooling", example_id_column)
     bootstrap_online_elo = compute_mle_elo(council_choice, reference_llm_respondent)
     win_rates = get_win_rate(bootstrap_online_elo, reference_llm_respondent)
-    per_judge_preferences["council (mean pooling)"] = win_rates
+    per_judge_preferences["council/mean-pooling"] = win_rates
 
     council_choice = judging_df
     bootstrap_online_elo = compute_mle_elo(council_choice, reference_llm_respondent)
     win_rates = get_win_rate(bootstrap_online_elo, reference_llm_respondent)
-    per_judge_preferences["council (no aggregation)"] = win_rates
+    per_judge_preferences["council/no-aggregation"] = win_rates
 
     per_judge_preferences_df = pd.DataFrame(sorted_dict_of_dict(per_judge_preferences))
     per_judge_preferences_df = per_judge_preferences_df / 100
@@ -54,12 +54,11 @@ def get_affinity_df(
     # Subtract out the council's win rate.
     per_judge_preferences_council_normalized = defaultdict(dict)
     for judge, participant_affinity in per_judge_preferences.items():
-        if judge == "council (no aggregation)":
+        if judge == "council/no-aggregation":
             continue
         for participant, affinity in participant_affinity.items():
             per_judge_preferences_council_normalized[judge][participant] = (
-                affinity
-                - per_judge_preferences["council (no aggregation)"][participant]
+                affinity - per_judge_preferences["council/no-aggregation"][participant]
             )
     per_judge_preferences_council_normalized_df = pd.DataFrame(
         per_judge_preferences_council_normalized

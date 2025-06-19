@@ -57,12 +57,12 @@ def get_consistent_votes(
     first_completion_by_column_name="first_completion_by",
     second_completion_by_column_name="second_completion_by",
     pairwise_choice_column_name="pairwise_choice",
-    llm_judge_column_name="llm_judge",
+    llm_judge_column_name="judge_model",
 ) -> pd.DataFrame:
     """Returns a DataFrame of consistent votes."""
 
     # Get the unique judges.
-    judges = list(df["llm_judge"].unique())
+    judges = list(df["judge_model"].unique())
 
     if example_id_column_name is None:
         # Use the index.
@@ -71,7 +71,7 @@ def get_consistent_votes(
     # Create a map of judge -> (id, first, second) -> row.
     judge_to_votes_map = defaultdict(dict)
     for i, row in df.iterrows():
-        judge_to_votes_map[row["llm_judge"]][
+        judge_to_votes_map[row["judge_model"]][
             (
                 row[example_id_column_name],
                 row["first_completion_by"],
@@ -124,7 +124,7 @@ def get_judge_invariability_df(
         full_judging_df.groupby(
             [
                 example_id_column,
-                "llm_judge",
+                "judge_model",
                 "first_completion_by",
                 "second_completion_by",
             ]
@@ -157,7 +157,7 @@ def get_judge_invariability_df(
 
 
 def get_judge_invariability_summary_df(conslidated_reps_df) -> pd.DataFrame:
-    return conslidated_reps_df.groupby("llm_judge").agg(
+    return conslidated_reps_df.groupby("judge_model").agg(
         mean_invariability=pd.NamedAgg(column="invariability", aggfunc="mean"),
         mean_num_unique_responses=pd.NamedAgg(
             column="number_of_unique_responses", aggfunc="mean"
@@ -299,17 +299,17 @@ def get_judge_profile_stats(judge_choice, example_id_column="emobench_id"):
 def get_judge_profiles_df(judging_df):
     # Individual judges.
     judge_to_rating_profile_stats = {}
-    for judge in judging_df["llm_judge"].unique():
-        judge_choice = judging_df[judging_df["llm_judge"] == judge]
+    for judge in judging_df["judge_model"].unique():
+        judge_choice = judging_df[judging_df["judge_model"] == judge]
         judge_to_rating_profile_stats[judge] = get_judge_profile_stats(judge_choice)
 
     # Add the council.
     council_choice = get_council_choice(judging_df, "majority")
-    judge_to_rating_profile_stats["council (majority vote)"] = get_judge_profile_stats(
+    judge_to_rating_profile_stats["council/majority-vote"] = get_judge_profile_stats(
         council_choice
     )
     council_choice = get_council_choice(judging_df, "mean_pooling")
-    judge_to_rating_profile_stats["council (mean pooling)"] = get_judge_profile_stats(
+    judge_to_rating_profile_stats["council/mean-pooling"] = get_judge_profile_stats(
         council_choice
     )
 

@@ -11,8 +11,8 @@ import numpy as np
 
 def remove_self_judges(df):
     """Removes all examples where the LLM judged themselves."""
-    df = df[df["llm_judge"] != df["first_completion_by"]]
-    df = df[df["llm_judge"] != df["second_completion_by"]]
+    df = df[df["judge_model"] != df["first_completion_by"]]
+    df = df[df["judge_model"] != df["second_completion_by"]]
     return df
 
 
