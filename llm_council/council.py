@@ -1,4 +1,5 @@
 import pandas as pd
+import requests
 import os
 import json
 from llm_council.judging.schema import (
@@ -25,6 +26,8 @@ from llm_council.analysis.visualization import plot_arena_hard_elo_stats
 from llm_council.analysis.pairwise.separability import (
     analyze_rankings_separability_polarization,
 )
+import aiohttp  # only for the initial one-off GET
+from aiolimiter import AsyncLimiter  # pip install aiolimiter
 
 
 def process_pairwise_choice(raw_pairwise_choice: str) -> str:
@@ -41,6 +44,8 @@ class LanguageModelCouncil:
     ):
         self.models = models
 
+        self.judge_models = judge_models
+        # If no judge models are provided, use the same models for judging.
         if judge_models is None:
             # Use the same models for judging.
             self.judge_models = models
@@ -51,9 +56,25 @@ class LanguageModelCouncil:
             api_key=api_key,
         )
 
+        # ───── Fetch key-specific rate limits once ──────────
+        key_meta = requests.get(
+            "https://openrouter.ai/api/v1/auth/key",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=10,
+        ).json()["data"]["rate_limit"]
+
+        max_calls = key_meta["requests"]  # 100
+        interval_seconds = (
+            10
+            if key_meta["interval"].endswith("s")
+            else int(key_meta["interval"][:-1])  # handle "1m", "2h", etc.
+        )
+        self._limiter = AsyncLimiter(max_calls, interval_seconds)
+
         # Define the evaluation config if one is not already defined.
         if eval_config is None:
-            self.eval_config = DEFAULT_PAIRWISE_EVALUATION_CONFIG
+            # self.eval_config = DEFAULT_PAIRWISE_EVALUATION_CONFIG
+            self.eval_config = DEFAULT_EVALUATION_CONFIG
         else:
             self.eval_config = eval_config
 
@@ -66,6 +87,11 @@ class LanguageModelCouncil:
         # List of all judgments.
         self.judgments = []
 
+    async def _with_rate_limit(self, coro):
+        """Run any OpenRouter coroutine under the global AsyncLimiter."""
+        async with self._limiter:
+            return await coro
+
     async def get_judge_rubric_structured_output(
         self,
         user_prompt: str,
@@ -75,13 +101,15 @@ class LanguageModelCouncil:
         schema_class: type,
     ) -> dict:
         """Get an async structured output task for the given prompt."""
-        completion = await self.client.beta.chat.completions.parse(
-            model=judge_model,
-            messages=[
-                {"role": "user", "content": judge_prompt},
-            ],
-            temperature=self.eval_config.temperature,
-            response_format=schema_class,
+        completion = await self._with_rate_limit(
+            self.client.beta.chat.completions.parse(
+                model=judge_model,
+                messages=[
+                    {"role": "user", "content": judge_prompt},
+                ],
+                temperature=self.eval_config.temperature,
+                response_format=schema_class,
+            )
         )
 
         structured_output = completion.choices[0].message.parsed
@@ -104,12 +132,14 @@ class LanguageModelCouncil:
         temperature: float | None = None,
     ):
         """Get an async text completion task for the given prompt."""
-        completion = await self.client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=temperature,
+        completion = await self._with_rate_limit(
+            self.client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=temperature,
+            )
         )
 
         return {
@@ -252,13 +282,15 @@ class LanguageModelCouncil:
 
         judge_prompt = prompt_template.format(**prompt_template_fields)
 
-        completion = await self.client.beta.chat.completions.parse(
-            model=judge_model,
-            messages=[
-                {"role": "user", "content": judge_prompt},
-            ],
-            temperature=temperature,
-            response_format=schema_class,
+        completion = self._with_rate_limit(
+            await self.client.beta.chat.completions.parse(
+                model=judge_model,
+                messages=[
+                    {"role": "user", "content": judge_prompt},
+                ],
+                temperature=temperature,
+                response_format=schema_class,
+            )
         )
 
         structured_output = completion.choices[0].message.parsed
@@ -395,7 +427,6 @@ class LanguageModelCouncil:
 
         print(f"Generated {len(judging_tasks)} judging tasks.")
 
-        # Execute all tasks concurrently.
         judgments = []
         for future in tqdm.asyncio.tqdm.as_completed(
             judging_tasks, total=len(judging_tasks)
@@ -416,11 +447,10 @@ class LanguageModelCouncil:
 
     async def collect_judge_ratings(
         self,
-        user_prompt: str,
         completions_df: pd.DataFrame,
     ) -> pd.DataFrame:
         if self.eval_config.type == "direct_assessment":
-            judgments = await self.get_judge_rubric_ratings(completions_df, user_prompt)
+            judgments = await self.get_judge_rubric_ratings(completions_df)
         elif self.eval_config.type == "pairwise_comparison":
             judgments = await self.get_judge_pairwise_ratings(completions_df)
         else:
@@ -437,28 +467,35 @@ class LanguageModelCouncil:
         """Returns the completions made by the council."""
         return pd.DataFrame(self.completions)
 
-    async def execute(
-        self,
-        prompt: str | None,
-        completions_df: pd.DataFrame | None = None,
-        eval_config: EvaluationConfig | None = None,
-    ):
-        if prompt is None and completions_df is None:
-            raise ValueError("Only one of `prompt` or `completions` must be specified.")
+    async def execute(self, prompts: str | list[str]):
+        # Normalize to list[str]
+        if isinstance(prompts, str):
+            prompts = [prompts]
 
-        completions_df = await self.collect_completions(prompt)
-        for _, row in completions_df.iterrows():
-            self.completions.append(row)
+        if prompts is not None:
+            # ─── 1️⃣  completions phase ─────────
+            completion_tasks = [
+                task
+                for p in prompts
+                for task in await self.get_text_completions(
+                    p, self.eval_config.temperature
+                )
+            ]
+            completions_raw = [
+                await fut
+                for fut in tqdm.asyncio.tqdm.as_completed(
+                    completion_tasks, total=len(completion_tasks)
+                )
+            ]
+            completions_df = pd.DataFrame(completions_raw)
+            self.completions.extend(completions_raw)
+            self.user_prompts.extend(prompts)
 
+        # ─── 2️⃣  judging phase ─────────
         judging_df = await self.collect_judge_ratings(
-            user_prompt=prompt,
             completions_df=completions_df,
         )
-
-        # Save all judgments.
-        for _, row in judging_df.iterrows():
-            self.judgments.append(row)
-
+        self.judgments.extend(judging_df.to_dict("records"))
         return completions_df, judging_df
 
     def leaderboard(self):
