@@ -147,8 +147,8 @@ def get_bootstrap_result(
 ):
     rows = []
     for i in tqdm(range(num_rounds), desc="bootstrap"):
-        if len(df) < 10:
-            # If there are fewer than 10 rows, we cannot bootstrap.
+        if len(df) < 100:
+            # If there are fewer than 100 rows, we cannot bootstrap.
             rows.append(func_compute_elo(df, reference_llm_respondent))
             continue
 

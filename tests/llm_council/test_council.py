@@ -12,10 +12,11 @@ async def test_language_model_council():
         models=[
             "google/gemini-2.5-flash-preview-05-20",
             "meta-llama/llama-3.1-8b-instruct",
+            "x-ai/grok-3-mini",
         ]
     )
 
-    await lmc.execute(prompt="Say hello.")
+    await lmc.execute("Say hello.")
 
     lmc.save("tests/testdata/sample_session")
     lmc.load("tests/testdata/sample_session")

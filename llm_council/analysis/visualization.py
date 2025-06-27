@@ -125,7 +125,7 @@ def plot_arena_hard_elo_stats(stats, title, outfile, show=False):
     plt.figure(figsize=(10, height))
 
     # Increase font size globally
-    plt.rcParams.update({"font.size": 12})
+    plt.rcParams.update({"font.size": 10})
 
     ax = sns.barplot(
         data=stats,
@@ -135,23 +135,30 @@ def plot_arena_hard_elo_stats(stats, title, outfile, show=False):
         palette=FAMILY_COLORS,
     )
 
-    # Add error bars
+    # Add error bars only if lower_error != upper_error
     for i, (score, error) in enumerate(zip(stats["score"], errors.T)):
-        try:
-            ax.errorbar(
-                score, i, xerr=[error[:1], error[1:]], fmt="none", c="black", capsize=5
-            )
-        except Exception as e:
-            print(
-                f"Error bars aren't valid: {error[:1], error[1:]}. This can happen due to bad bootstrap sampling, particularly in low data scenarios. Skipping."
-            )
-        plt.text(score + error[1:] + 1, i, f"{score}", va="center", color="black")
+        lower_err, upper_err = error[0], error[1]
+        if lower_err != upper_err:
+            try:
+                ax.errorbar(
+                    score,
+                    i,
+                    xerr=[[lower_err], [upper_err]],
+                    fmt="none",
+                    c="black",
+                    capsize=5,
+                )
+            except Exception as e:
+                print(
+                    f"Error bars aren't valid: {error[:1], error[1:]}. This can happen due to bad bootstrap sampling, particularly in low data scenarios. Skipping."
+                )
+        plt.text(score + upper_err + 1, i, f"{score}", va="center", color="black")
 
     plt.title(title)
     plt.xlabel("Win Rate")
     plt.ylabel("")
     plt.grid(axis="x", linestyle="--")
-    plt.legend(title="Family", loc="center left", bbox_to_anchor=(1, 0.5), fontsize=16)
+    plt.legend(title="Family", loc="center left", bbox_to_anchor=(1, 0.5), fontsize=10)
     plt.xlim(right=stats["score"].max() + 20)
     plt.tight_layout()
 

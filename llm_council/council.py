@@ -26,8 +26,11 @@ from llm_council.analysis.visualization import plot_arena_hard_elo_stats
 from llm_council.analysis.pairwise.separability import (
     analyze_rankings_separability_polarization,
 )
-import aiohttp  # only for the initial one-off GET
-from aiolimiter import AsyncLimiter  # pip install aiolimiter
+import aiohttp
+from aiolimiter import AsyncLimiter
+import instructor
+from llm_council.analysis.pairwise.explicit_win_rate import get_explicit_win_rates
+from llm_council.analysis.pairwise.agreement import get_judge_agreement_map
 
 
 def process_pairwise_choice(raw_pairwise_choice: str) -> str:
@@ -55,6 +58,13 @@ class LanguageModelCouncil:
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
         )
+        self.client_structured = AsyncOpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+        )
+        self.client_structured = instructor.from_openai(
+            self.client_structured, mode=instructor.Mode.TOOLS
+        )
 
         # ───── Fetch key-specific rate limits once ──────────
         key_meta = requests.get(
@@ -73,8 +83,8 @@ class LanguageModelCouncil:
 
         # Define the evaluation config if one is not already defined.
         if eval_config is None:
-            # self.eval_config = DEFAULT_PAIRWISE_EVALUATION_CONFIG
-            self.eval_config = DEFAULT_EVALUATION_CONFIG
+            self.eval_config = DEFAULT_PAIRWISE_EVALUATION_CONFIG
+            # self.eval_config = DEFAULT_EVALUATION_CONFIG
         else:
             self.eval_config = eval_config
 
@@ -101,18 +111,17 @@ class LanguageModelCouncil:
         schema_class: type,
     ) -> dict:
         """Get an async structured output task for the given prompt."""
-        completion = await self._with_rate_limit(
-            self.client.beta.chat.completions.parse(
+        structured_output, completion = await self._with_rate_limit(
+            self.client_structured.chat.completions.create_with_completion(
                 model=judge_model,
                 messages=[
                     {"role": "user", "content": judge_prompt},
                 ],
                 temperature=self.eval_config.temperature,
-                response_format=schema_class,
+                response_model=schema_class,
+                extra_body={"provider": {"require_parameters": True}},
             )
         )
-
-        structured_output = completion.choices[0].message.parsed
 
         return {
             "user_prompt": user_prompt,
@@ -282,18 +291,20 @@ class LanguageModelCouncil:
 
         judge_prompt = prompt_template.format(**prompt_template_fields)
 
-        completion = self._with_rate_limit(
-            await self.client.beta.chat.completions.parse(
+        structured_output, completion = await self._with_rate_limit(
+            # self.client.beta.chat.completions.parse(
+            self.client_structured.chat.completions.create_with_completion(
                 model=judge_model,
                 messages=[
                     {"role": "user", "content": judge_prompt},
                 ],
                 temperature=temperature,
-                response_format=schema_class,
+                response_model=schema_class,
+                extra_body={"provider": {"require_parameters": True}},
             )
         )
 
-        structured_output = completion.choices[0].message.parsed
+        # structured_output = completion.choices[0].message.parsed
 
         return {
             "user_prompt": user_prompt,
@@ -326,6 +337,20 @@ class LanguageModelCouncil:
             for llm2 in list(completions_map.keys())[i + 1 :]
         ]
 
+        # Skip equal pairs.
+        if pairwise_comparison_config.skip_equal_pairs:
+            completion_pairs = [
+                (llm1, llm2)
+                for llm1, llm2 in completion_pairs
+                if completions_map[llm1] != completions_map[llm2]
+            ]
+
+        # Apply positional flipping.
+        if pairwise_comparison_config.position_flipping:
+            completion_pairs = [
+                (llm2, llm1) for llm1, llm2 in completion_pairs
+            ] + completion_pairs
+
         # Filter down the pairs based on the pairwise_comparison_config.
         if pairwise_comparison_config.algorithm_type == "all_pairs":
             # No filtering needed.
@@ -341,22 +366,9 @@ class LanguageModelCouncil:
             completion_pairs = [
                 pair
                 for pair in completion_pairs
-                if pair[0] in pairwise_comparison_config.reference_models
+                if pair[0]
+                in pairwise_comparison_config.algorithm_config.reference_models
             ]
-
-        # Skip equal pairs.
-        if pairwise_comparison_config.skip_equal_pairs:
-            completion_pairs = [
-                (llm1, llm2)
-                for llm1, llm2 in completion_pairs
-                if completions_map[llm1] != completions_map[llm2]
-            ]
-
-        # Apply positional flipping.
-        if pairwise_comparison_config.position_flipping:
-            completion_pairs = [
-                (llm2, llm1) for llm1, llm2 in completion_pairs
-            ] + completion_pairs
 
         # Apply reps.
         completion_pairs = [
@@ -445,7 +457,7 @@ class LanguageModelCouncil:
 
         return judgments
 
-    async def collect_judge_ratings(
+    async def judge(
         self,
         completions_df: pd.DataFrame,
     ) -> pd.DataFrame:
@@ -472,27 +484,27 @@ class LanguageModelCouncil:
         if isinstance(prompts, str):
             prompts = [prompts]
 
-        if prompts is not None:
-            # ─── 1️⃣  completions phase ─────────
-            completion_tasks = [
-                task
-                for p in prompts
-                for task in await self.get_text_completions(
-                    p, self.eval_config.temperature
-                )
-            ]
-            completions_raw = [
-                await fut
-                for fut in tqdm.asyncio.tqdm.as_completed(
-                    completion_tasks, total=len(completion_tasks)
-                )
-            ]
-            completions_df = pd.DataFrame(completions_raw)
-            self.completions.extend(completions_raw)
-            self.user_prompts.extend(prompts)
+        # ─── 1️⃣  completions phase ─────────
+        completion_tasks = [
+            task
+            for p in prompts
+            for task in await self.get_text_completions(p, self.eval_config.temperature)
+        ]
+
+        print(f"Generated {len(completion_tasks)} completion tasks.")
+
+        completions_raw = [
+            await fut
+            for fut in tqdm.asyncio.tqdm.as_completed(
+                completion_tasks, total=len(completion_tasks)
+            )
+        ]
+        completions_df = pd.DataFrame(completions_raw)
+        self.completions.extend(completions_raw)
+        self.user_prompts.extend(prompts)
 
         # ─── 2️⃣  judging phase ─────────
-        judging_df = await self.collect_judge_ratings(
+        judging_df = await self.judge(
             completions_df=completions_df,
         )
         self.judgments.extend(judging_df.to_dict("records"))
@@ -501,9 +513,10 @@ class LanguageModelCouncil:
     def leaderboard(self):
         if self.eval_config.type == "pairwise_comparison":
             judging_df = self.get_judging_df()
+            reference_llm_respondent = judging_df.iloc[0]["first_completion_by"]
             rankings_results = analyze_rankings_separability_polarization(
                 judging_df,
-                reference_llm_respondent="google/gemini-2.5-flash-preview-05-20",
+                reference_llm_respondent=reference_llm_respondent,
                 bootstrap_rounds=10,
                 include_individual_judges=True,
                 include_council_majority=True,
@@ -514,10 +527,11 @@ class LanguageModelCouncil:
 
             plot_arena_hard_elo_stats(
                 rankings_results["council/no-aggregation"]["elo_scores"],
-                "Rankings",
+                "",
                 None,
                 show=True,
             )
+            return rankings_results
         else:
             raise ValueError(
                 "Leaderboard can only be generated for pairwise comparison evaluations."
@@ -528,13 +542,21 @@ class LanguageModelCouncil:
             raise ValueError(
                 "Win rate heatmap can only be generated for pairwise comparison evaluations."
             )
+        return bradley_terry_analysis(self.get_judging_df())
+
+    def explicit_win_rate_heatmap(self):
+        if self.eval_config.type != "pairwise_comparison":
+            raise ValueError(
+                "Explicit win rate heatmap can only be generated for pairwise comparison evaluations."
+            )
+
         judging_df = self.get_judging_df()
-        expected_win_rate_map = bradley_terry_analysis(judging_df)
+        win_rate_map = get_explicit_win_rates(judging_df)
         num_models = len(self.models)
         figsize = (max(5, num_models), max(4, num_models))
 
         plot_heatmap(
-            expected_win_rate_map,
+            win_rate_map,
             ylabel="Respondent",
             xlabel="vs. Respondent",
             vmin=0,
@@ -543,6 +565,13 @@ class LanguageModelCouncil:
             outfile=None,
             figsize=figsize,
             font_size=8,
+        )
+
+        return win_rate_map
+
+    def judge_agreement(self):
+        return get_judge_agreement_map(
+            self.get_judging_df(), example_id_column="user_prompt"
         )
 
     def save(self, outdir):

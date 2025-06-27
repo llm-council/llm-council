@@ -30,7 +30,7 @@ class DirectAssessmentConfig(BaseModel):
 
 
 class PairwiseComparisonFixedReferencesConfig(BaseModel):
-    reference_llms: List[str] = Field(
+    reference_models: List[str] = Field(
         ...,
         description="The reference LLMs that the other models are compared against.",
     )
@@ -158,6 +158,35 @@ DEFAULT_EVALUATION_CONFIG = EvaluationConfig(
 )
 
 
+# DEFAULT_PAIRWISE_EVALUATION_CONFIG = EvaluationConfig(
+#     type="pairwise_comparison",
+#     exclude_self_grading=False,
+#     cot_enabled=False,
+#     config=PairwiseComparisonConfig(
+#         prompt_template="""The user prompt was {user_prompt}.
+
+# We want to decide which response is better. Here are some themes to consider: coherence and relevance.
+
+# ---
+# Here is response 1:
+# ---
+# {response_1}
+
+# ---
+# Here is response 2:
+# ---
+# {response_2}
+
+# You must output only one of the following choices as your final verdict with a label:
+# {pairwise_comparison_labels}
+
+# """,
+#         granularity=5,
+#         algorithm_type="all_pairs",
+#     ),
+# )
+
+
 DEFAULT_PAIRWISE_EVALUATION_CONFIG = EvaluationConfig(
     type="pairwise_comparison",
     exclude_self_grading=False,
@@ -182,6 +211,9 @@ You must output only one of the following choices as your final verdict with a l
 
 """,
         granularity=5,
-        algorithm_type="all_pairs",
+        algorithm_type="fixed_reference_models",
+        algorithm_config=PairwiseComparisonFixedReferencesConfig(
+            reference_models=["google/gemini-2.5-flash-preview-05-20"]
+        ),
     ),
 )
