@@ -1,4 +1,4 @@
-from llm_council.judging.schema import (
+from llm_council.judging.config import (
     EvaluationConfig,
     DirectAssessmentConfig,
     Criteria,

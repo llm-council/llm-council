@@ -168,3 +168,112 @@ def plot_arena_hard_elo_stats(stats, title, outfile, show=False):
     if show:
         plt.show()
     plt.close()
+
+
+def get_grouped_scores(judging_df, eval_config):
+    """Groups the judging DataFrame by model and computes aggregated scores for each criterion."""
+
+    criteria_names = [c.name for c in eval_config.config.rubric]
+    # Build aggregation functions for all criteria
+    agg_funcs = {name: ["mean", list, "std"] for name in criteria_names}
+    grouped = judging_df.groupby("model_being_judged").agg(agg_funcs)
+    # Flatten MultiIndex columns
+    grouped.columns = [
+        f"{col[0]}{'' if col[1]=='mean' else '__'+col[1]}" for col in grouped.columns
+    ]
+
+    # Compute Overall and Overall__std
+    def overall(row):
+        return sum(row[name] for name in criteria_names) / len(criteria_names)
+
+    def overall_raw(row):
+        # Zip the raw lists and average per judge
+        return [
+            sum(vals) / len(vals)
+            for vals in zip(*(row[f"{name}__list"] for name in criteria_names))
+        ]
+
+    grouped["Overall"] = grouped.apply(overall, axis=1)
+    grouped["Overall__raw"] = grouped.apply(overall_raw, axis=1)
+    grouped["Overall__std"] = grouped["Overall__raw"].apply(
+        lambda x: pd.Series(x).std()
+    )
+
+    # Add family column
+    grouped = grouped.reset_index()
+    grouped["family"] = grouped["model_being_judged"].apply(lambda x: x.split("/")[0])
+    return grouped
+
+
+def plot_direct_assessment_charts(judging_df, eval_config):
+    grouped = get_grouped_scores(judging_df, eval_config)
+
+    criteria_names = [c.name for c in eval_config.config.rubric]
+    # Put "Overall" first
+    plot_names = ["Overall"] + criteria_names
+    n_plots = len(plot_names)
+    nrows, ncols = 3, 3
+    total_subplots = nrows * ncols
+
+    # Create the figure and axes with shared x and y axes
+    fig, axes = plt.subplots(nrows, ncols, figsize=(18, 12), sharex=True, sharey=True)
+    axes = axes.flatten()
+
+    # Determine y-tick labels order (sorted by overall)
+    yticklabels = grouped.sort_values(by="Overall", ascending=False)[
+        "model_being_judged"
+    ]
+
+    for idx, name in enumerate(plot_names):
+        ax = axes[idx]
+        data = grouped.set_index("model_being_judged").loc[yticklabels].reset_index()
+        sns.barplot(
+            data=data,
+            x=name,
+            y="model_being_judged",
+            hue="family",
+            palette=FAMILY_COLORS,
+            orient="h",
+            ax=ax,
+        )
+        # Add bar annotations
+        for p in ax.patches:
+            width = p.get_width()
+            if width:
+                ax.annotate(
+                    f"{width:.2f}",
+                    (width, p.get_y() + p.get_height() / 2),
+                    xytext=(5, 0),
+                    textcoords="offset points",
+                    va="center",
+                    ha="left",
+                    fontsize=9,
+                )
+        xlim = ax.get_xlim()
+        ax.set_xlim(xlim[0], xlim[1] + 0.03 * (xlim[1] - xlim[0]))
+        ax.set_title(f"{name if name != 'Overall' else 'Overall Scores'}")
+        ax.set_xlabel("Mean Score" if name != "Overall" else "Mean Overall Score")
+        ax.set_ylabel("")
+
+    # Hide unused subplots
+    for i in range(n_plots, total_subplots):
+        fig.delaxes(axes[i])
+
+    # Add a single legend for all subplots
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        title="Family",
+        loc="upper center",
+        ncol=len(labels),
+    )
+
+    # Remove individual legends from each subplot.
+    for ax in axes:
+        ax.legend_.remove() if ax.get_legend() else None
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Leave space for legend at the top
+    plt.show()
+
+    return grouped

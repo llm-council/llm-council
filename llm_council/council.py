@@ -2,11 +2,8 @@ import pandas as pd
 import requests
 import os
 import json
-from llm_council.judging.schema import (
-    EvaluationConfig,
-    DEFAULT_EVALUATION_CONFIG,
-    DEFAULT_PAIRWISE_EVALUATION_CONFIG,
-)
+from llm_council.judging.config import EvaluationConfig
+from llm_council.judging import PRESET_EVAL_CONFIGS
 from llm_council.structured_outputs import create_dynamic_schema
 import tqdm.asyncio
 import random
@@ -22,7 +19,10 @@ from openai import AsyncOpenAI
 import re
 from llm_council.analysis.pairwise.bradley_terry import bradley_terry_analysis
 from llm_council.analysis.visualization import plot_heatmap
-from llm_council.analysis.visualization import plot_arena_hard_elo_stats
+from llm_council.analysis.visualization import (
+    plot_arena_hard_elo_stats,
+    plot_direct_assessment_charts,
+)
 from llm_council.analysis.pairwise.separability import (
     analyze_rankings_separability_polarization,
 )
@@ -31,6 +31,10 @@ from aiolimiter import AsyncLimiter
 import instructor
 from llm_council.analysis.pairwise.explicit_win_rate import get_explicit_win_rates
 from llm_council.analysis.pairwise.agreement import get_judge_agreement_map
+import seaborn as sns
+from datasets import Dataset, DatasetDict, Features, Value
+from huggingface_hub import HfApi, HfFolder
+import matplotlib.pyplot as plt
 
 
 def process_pairwise_choice(raw_pairwise_choice: str) -> str:
@@ -83,8 +87,7 @@ class LanguageModelCouncil:
 
         # Define the evaluation config if one is not already defined.
         if eval_config is None:
-            self.eval_config = DEFAULT_PAIRWISE_EVALUATION_CONFIG
-            # self.eval_config = DEFAULT_EVALUATION_CONFIG
+            self.eval_config = PRESET_EVAL_CONFIGS["default_rubric"]
         else:
             self.eval_config = eval_config
 
@@ -533,11 +536,11 @@ class LanguageModelCouncil:
             )
             return rankings_results
         else:
-            raise ValueError(
-                "Leaderboard can only be generated for pairwise comparison evaluations."
+            return plot_direct_assessment_charts(
+                self.get_judging_df(), self.eval_config
             )
 
-    def win_rate_heatmap(self):
+    def win_rate_heatmap(self) -> pd.DataFrame:
         if self.eval_config.type != "pairwise_comparison":
             raise ValueError(
                 "Win rate heatmap can only be generated for pairwise comparison evaluations."
@@ -572,6 +575,93 @@ class LanguageModelCouncil:
     def judge_agreement(self):
         return get_judge_agreement_map(
             self.get_judging_df(), example_id_column="user_prompt"
+        )
+
+    def generate_hf_readme(self) -> str:
+        """
+        Generate a markdown string describing the dataset for Hugging Face Hub.
+        """
+
+        def make_serializable(obj):
+            if hasattr(obj, "to_dict"):
+                return obj.to_dict()
+            elif hasattr(obj, "__dict__"):
+                return {k: make_serializable(v) for k, v in obj.__dict__.items()}
+            elif isinstance(obj, list):
+                return [make_serializable(i) for i in obj]
+            elif isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            else:
+                return obj
+
+        eval_config_str = json.dumps(
+            make_serializable(self.eval_config),
+            indent=2,
+        )
+        num_prompts = len(set(self.user_prompts))
+        models_judged = "\n- " + "\n- ".join(self.models)
+        judge_models = (
+            "\n- " + "\n- ".join(self.judge_models)
+            if hasattr(self, "judge_models") and self.judge_models
+            else models_judged
+        )
+
+        readme = f"""## Dataset Overview
+
+**Number of unique prompts:** {num_prompts}
+
+**Models evaluated:** {models_judged}
+
+**Judge models:** {judge_models}
+
+**Provider:** [OpenRouter](https://openrouter.ai)
+
+## Evaluation Configuration
+```json
+{eval_config_str}
+```
+
+## About
+
+This dataset was generated using the [LLM Council](https://github.com/llm-council/lm-council), a framework for evaluating language models by having them judge each other democratically.
+"""
+        return readme
+
+    def upload_to_hf(self, repo_id: str):
+        """Upload completions and judgments as separate splits to Hugging Face Hub as a dataset."""
+
+        # Prepare datasets
+        completions_ds = Dataset.from_pandas(
+            pd.DataFrame(self.completions), preserve_index=False
+        )
+        judgments_ds = Dataset.from_pandas(
+            pd.DataFrame(self.judgments), preserve_index=False
+        )
+
+        # Push each dataset to Hugging Face Hub with a config_name and split
+        completions_ds.push_to_hub(repo_id, config_name="completions")
+        judgments_ds.push_to_hub(repo_id, config_name="judgments")
+
+        # Push README to the Hugging Face Hub
+        readme_str = self.generate_hf_readme()
+        api = HfApi()
+        # Get the current README if it exists
+        try:
+            old_readme = api.hf_hub_download(repo_id, "README.md", repo_type="dataset")
+            with open(old_readme, "r", encoding="utf-8") as f:
+                current_readme = f.read()
+        except Exception:
+            current_readme = ""
+
+        # Append the new readme content
+        combined_readme = current_readme + "\n\n" + readme_str
+
+        api.upload_file(
+            path_or_fileobj=combined_readme.encode("utf-8"),
+            path_in_repo="README.md",
+            repo_id=repo_id,
+            repo_type="dataset",
+            commit_message="Append to README.md",
         )
 
     def save(self, outdir):
