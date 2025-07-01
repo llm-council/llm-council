@@ -165,6 +165,7 @@ def plot_arena_hard_elo_stats(stats, title, outfile, show=False):
     # Save to file if specified
     if outfile:
         plt.savefig(outfile)
+        print(f"Arena leaderboard saved to {outfile}.")
     if show:
         plt.show()
     plt.close()
@@ -205,7 +206,7 @@ def get_grouped_scores(judging_df, eval_config):
     return grouped
 
 
-def plot_direct_assessment_charts(judging_df, eval_config):
+def plot_direct_assessment_charts(judging_df, eval_config, outfile=None):
     grouped = get_grouped_scores(judging_df, eval_config)
 
     criteria_names = [c.name for c in eval_config.config.rubric]
@@ -274,6 +275,12 @@ def plot_direct_assessment_charts(judging_df, eval_config):
         ax.legend_.remove() if ax.get_legend() else None
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Leave space for legend at the top
-    plt.show()
+
+    # Save to file if specified
+    if outfile:
+        plt.savefig(outfile)
+        print(f"Direct assessment leaderboard saved to {outfile}.")
+    else:
+        plt.show()
 
     return grouped

@@ -513,7 +513,7 @@ class LanguageModelCouncil:
         self.judgments.extend(judging_df.to_dict("records"))
         return completions_df, judging_df
 
-    def leaderboard(self):
+    def leaderboard(self, outfile: str | None = None) -> pd.DataFrame:
         if self.eval_config.type == "pairwise_comparison":
             judging_df = self.get_judging_df()
             reference_llm_respondent = judging_df.iloc[0]["first_completion_by"]
@@ -528,16 +528,24 @@ class LanguageModelCouncil:
                 example_id_column="user_prompt",
             )
 
+            if outfile:
+                show = False
+            else:
+                show = True
             plot_arena_hard_elo_stats(
                 rankings_results["council/no-aggregation"]["elo_scores"],
                 "",
-                None,
-                show=True,
+                outfile=outfile,
+                show=show,
             )
             return rankings_results
-        else:
+        elif self.eval_config.type == "direct_assessment":
             return plot_direct_assessment_charts(
-                self.get_judging_df(), self.eval_config
+                self.get_judging_df(), self.eval_config, outfile=outfile
+            )
+        else:
+            raise ValueError(
+                f"Unimplemented leaderboard for evaluation config type: {self.eval_config.type}. Must be one of: direct_assessment, pairwise_comparison."
             )
 
     def win_rate_heatmap(self) -> pd.DataFrame:
@@ -606,7 +614,12 @@ class LanguageModelCouncil:
             else models_judged
         )
 
-        readme = f"""## Dataset Overview
+        readme = f"""
+## Leaderboard
+
+![Leaderboard](leaderboard.png)
+
+## Dataset Overview
 
 **Number of unique prompts:** {num_prompts}
 
@@ -625,10 +638,11 @@ class LanguageModelCouncil:
 
 This dataset was generated using the [LLM Council](https://github.com/llm-council/lm-council), a framework for evaluating language models by having them judge each other democratically.
 """
+
         return readme
 
     def upload_to_hf(self, repo_id: str):
-        """Upload completions and judgments as separate splits to Hugging Face Hub as a dataset."""
+        """Upload completions, judgments, leaderboard figure, and README to Hugging Face Hub as a dataset."""
 
         # Prepare datasets
         completions_ds = Dataset.from_pandas(
@@ -638,13 +652,32 @@ This dataset was generated using the [LLM Council](https://github.com/llm-counci
             pd.DataFrame(self.judgments), preserve_index=False
         )
 
+        # Generate and save leaderboard figure
+        leaderboard_df = self.leaderboard("leaderboard.png")
+
+        leaderboard_ds = Dataset.from_pandas(
+            leaderboard_df,
+            preserve_index=False,
+        )
+
         # Push each dataset to Hugging Face Hub with a config_name and split
         completions_ds.push_to_hub(repo_id, config_name="completions")
         judgments_ds.push_to_hub(repo_id, config_name="judgments")
+        leaderboard_ds.push_to_hub(repo_id, config_name="leaderboard")
+
+        # Upload leaderboard.png to the repo
+        api = HfApi()
+        api.upload_file(
+            path_or_fileobj="leaderboard.png",
+            path_in_repo="leaderboard.png",
+            repo_id=repo_id,
+            repo_type="dataset",
+            commit_message="Add leaderboard figure",
+        )
+        os.remove("leaderboard.png")
 
         # Push README to the Hugging Face Hub
         readme_str = self.generate_hf_readme()
-        api = HfApi()
         # Get the current README if it exists
         try:
             old_readme = api.hf_hub_download(repo_id, "README.md", repo_type="dataset")
