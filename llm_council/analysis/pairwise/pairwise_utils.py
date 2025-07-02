@@ -66,3 +66,19 @@ def get_council_choice(df, council_aggregation_method, example_id_column="emoben
     raise ValueError(
         f"Invalid council aggregation method: {council_aggregation_method}"
     )
+
+
+def get_reference_llm(judging_df, eval_config) -> str:
+    """Get the reference LLM respondent for pairwise analysis."""
+
+    if eval_config.config.algorithm_config.reference_models:
+        # Use the reference LLM from the eval_config if defined.
+        reference_llm_respondent = eval_config.config.algorithm_config.reference_models[
+            0
+        ]
+        print(f"Using reference LLM from config: {reference_llm_respondent}")
+    else:
+        # Use the first judged model.
+        reference_llm_respondent = judging_df.iloc[0]["first_completion_by"]
+        print(f"Using reference LLM from judging_df: {reference_llm_respondent}")
+    return reference_llm_respondent

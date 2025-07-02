@@ -31,9 +31,14 @@ from aiolimiter import AsyncLimiter
 import instructor
 from llm_council.analysis.pairwise.explicit_win_rate import get_explicit_win_rates
 from llm_council.analysis.pairwise.agreement import get_judge_agreement_map
+from llm_council.analysis.rubric.agreement import get_judge_agreement
+from llm_council.analysis.rubric.affinity import get_affinity_matrices
+from llm_council.analysis.pairwise.affinity import get_affinity_df
+from llm_council.analysis.pairwise.pairwise_utils import get_reference_llm
 import seaborn as sns
 from datasets import Dataset, DatasetDict, Features, Value
 from huggingface_hub import HfApi, HfFolder
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -47,9 +52,10 @@ class LanguageModelCouncil:
         self,
         models: list[str],
         judge_models: list[str] | None = None,
-        eval_config: EvaluationConfig | None = None,
+        eval_config: EvaluationConfig | None = PRESET_EVAL_CONFIGS["default_rubric"],
     ):
         self.models = models
+        self.eval_config = eval_config
 
         self.judge_models = judge_models
         # If no judge models are provided, use the same models for judging.
@@ -85,11 +91,23 @@ class LanguageModelCouncil:
         )
         self._limiter = AsyncLimiter(max_calls, interval_seconds)
 
-        # Define the evaluation config if one is not already defined.
-        if eval_config is None:
-            self.eval_config = PRESET_EVAL_CONFIGS["default_rubric"]
-        else:
-            self.eval_config = eval_config
+        # If we're doing pairwise_comparisons with fixed_reference_model(s), check that each of the
+        # models in config.algorithm_config.reference_models is also included in our completion
+        # requests.
+        if (
+            self.eval_config.type == "pairwise_comparison"
+            and getattr(self.eval_config.config, "algorithm_type", None)
+            == "fixed_reference_models"
+        ):
+            reference_models = set(
+                self.eval_config.config.algorithm_config.reference_models
+            )
+            missing = list(reference_models - set(self.models))
+
+            print(
+                f"The following reference models are specified in config.algorithm_config.reference_models but are not present in self.models: {missing}. Adding these model(s) to the council."
+            )
+            self.models.extend(missing)
 
         # List of all user prompts.
         self.user_prompts = []
@@ -250,7 +268,6 @@ class LanguageModelCouncil:
 
         print(f"Generated {len(judging_tasks)} judging tasks.")
 
-        # Execute all tasks concurrently.
         judgments = []
         for future in tqdm.asyncio.tqdm.as_completed(
             judging_tasks, total=len(judging_tasks)
@@ -262,6 +279,13 @@ class LanguageModelCouncil:
             result.update(structured_output.model_dump())
             judgments.append(result)
 
+        # Add an overall score column, which is the mean of all criteria scores.
+        for judgment in judgments:
+            criteria_scores = [
+                judgment[f"{criteria.name}"]
+                for criteria in self.eval_config.config.rubric
+            ]
+            judgment["Overall"] = sum(criteria_scores) / len(criteria_scores)
         return pd.DataFrame(judgments)
 
     async def get_judge_pairwise_structured_output(
@@ -306,8 +330,6 @@ class LanguageModelCouncil:
                 extra_body={"provider": {"require_parameters": True}},
             )
         )
-
-        # structured_output = completion.choices[0].message.parsed
 
         return {
             "user_prompt": user_prompt,
@@ -516,10 +538,14 @@ class LanguageModelCouncil:
     def leaderboard(self, outfile: str | None = None) -> pd.DataFrame:
         if self.eval_config.type == "pairwise_comparison":
             judging_df = self.get_judging_df()
-            reference_llm_respondent = judging_df.iloc[0]["first_completion_by"]
+            reference_llm = get_reference_llm(
+                judging_df,
+                self.eval_config,
+            )
+
             rankings_results = analyze_rankings_separability_polarization(
                 judging_df,
-                reference_llm_respondent=reference_llm_respondent,
+                reference_llm_respondent=reference_llm,
                 bootstrap_rounds=10,
                 include_individual_judges=True,
                 include_council_majority=True,
@@ -580,10 +606,126 @@ class LanguageModelCouncil:
 
         return win_rate_map
 
-    def judge_agreement(self):
-        return get_judge_agreement_map(
-            self.get_judging_df(), example_id_column="user_prompt"
-        )
+    def judge_agreement(self, show_plots=True):
+        if self.eval_config.type == "direct_assessment":
+            judging_df = self.get_judging_df()
+
+            agreement_matrices, mean_agreement_df = get_judge_agreement(
+                judging_df, self.eval_config
+            )
+
+            if show_plots:
+                # Plot agreement matrices for each criterion
+                for crit_col, matrix in agreement_matrices.items():
+                    plot_heatmap(
+                        matrix,
+                        ylabel="Judge Model",
+                        xlabel="Judge Model",
+                        title=f"Judge Agreement Matrix: {crit_col}",
+                        vmin=0,
+                        vmax=1,
+                        cmap="coolwarm_r",
+                        outfile=None,
+                        figsize=(8, 6),
+                        font_size=8,
+                    )
+
+            return agreement_matrices, mean_agreement_df
+
+        elif self.eval_config.type == "pairwise_comparison":
+            judge_agreement_map, mean_agreement_df = get_judge_agreement_map(
+                self.get_judging_df(), example_id_column="user_prompt"
+            )
+            if show_plots:
+                # Plot the judge agreement map as a heatmap
+                for judge_model, agreement_matrix in judge_agreement_map.items():
+                    plot_heatmap(
+                        agreement_matrix,
+                        ylabel="Judge Model",
+                        xlabel="Judge Model",
+                        title=f"Pairwise Judge Agreement: {judge_model}",
+                        vmin=0,
+                        vmax=1,
+                        cmap="coolwarm",
+                        outfile=None,
+                        figsize=(8, 6),
+                        font_size=8,
+                    )
+            return judge_agreement_map, mean_agreement_df
+
+    def affinity(self, show_plots=True):
+        if self.eval_config.type == "direct_assessment":
+            affinity_matrices = get_affinity_matrices(
+                self.get_judging_df(), self.eval_config
+            )
+            judge_models = self.judge_models
+            models_being_judged = self.models
+
+            if show_plots:
+                for crit, matrix in affinity_matrices.items():
+                    # Plot heatmap
+                    plot_heatmap(
+                        matrix,
+                        ylabel="Model Being Judged",
+                        xlabel="Judge Model",
+                        title=f"Affinity Heatmap: {crit}",
+                        vmin=0,
+                        vmax=1,
+                        cmap="coolwarm",
+                        outfile=None,
+                        figsize=(
+                            max(8, len(judge_models) + 2),
+                            max(6, len(models_being_judged)),
+                        ),
+                        font_size=8,
+                    )
+
+            return affinity_matrices
+        elif self.eval_config.type == "pairwise_comparison":
+            judging_df = self.get_judging_df()
+            reference_llm = get_reference_llm(
+                judging_df,
+                self.eval_config,
+            )
+            affinity_results = get_affinity_df(
+                judging_df,
+                reference_llm_respondent=reference_llm,
+                example_id_column="user_prompt",
+            )
+            if show_plots:
+                if "judge_preferences" in affinity_results:
+                    plot_heatmap(
+                        affinity_results["judge_preferences"],
+                        ylabel="Judge Model",
+                        xlabel="Model Being Judged",
+                        title="Judge Preferences",
+                        vmin=0,
+                        vmax=1,
+                        cmap="coolwarm",
+                        outfile=None,
+                        figsize=(
+                            max(8, len(self.judge_models) + 2),
+                            max(6, len(self.models)),
+                        ),
+                        font_size=8,
+                    )
+                if "judge_preferences_council_normalized" in affinity_results:
+                    plot_heatmap(
+                        affinity_results["judge_preferences_council_normalized"],
+                        ylabel="Judge Model",
+                        xlabel="Model Being Judged",
+                        title="Judge Preferences (Council Normalized)",
+                        vmin=-1,
+                        vmax=1,
+                        cmap="coolwarm",
+                        outfile=None,
+                        figsize=(
+                            max(8, len(self.judge_models) + 2),
+                            max(6, len(self.models)),
+                        ),
+                        font_size=8,
+                    )
+            return affinity_results
 
     def generate_hf_readme(self) -> str:
         """

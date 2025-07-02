@@ -129,6 +129,13 @@ def get_judge_agreement_df(df, agreement_method, example_id_column="emobench_id"
     return judge_to_judge_agreement_df
 
 
+def get_mean_agreement(judge_agreement_map: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    mean_agreement = {}
+    for agreement_method, judge_agreement_df in judge_agreement_map.items():
+        mean_agreement[agreement_method] = judge_agreement_df.mean()
+    return pd.DataFrame(mean_agreement)
+
+
 def get_judge_agreement_map(
     df, example_id_column="emobench_id"
 ) -> dict[str, pd.DataFrame]:
@@ -138,4 +145,6 @@ def get_judge_agreement_map(
             df, agreement_method, example_id_column
         )
         judge_agreement_dfs[agreement_method] = judge_agreement_df
-    return judge_agreement_dfs
+
+    mean_agreement_df = get_mean_agreement(judge_agreement_dfs)
+    return judge_agreement_dfs, mean_agreement_df
