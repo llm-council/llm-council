@@ -1,0 +1,19 @@
+{
+    "type": "pairwise_comparison",
+    "exclude_self_grading": false,
+    "cot_enabled": false,
+    "temperature": 0.0,
+    "config": {
+        "prompt_template": "Two models provided a response to a user prompt.\n\n### USER PROMPT START ###\n{user_prompt}\n### USER PROMPT END ###\n\nWe want to decide which response is better. To assses quality, think about coherence and relevance.\n\n### RESPONSE A START ###\n{response_1}\n### RESPONSE A END ###\n\n### RESPONSE B START ###\n{response_2}\n### RESPONSE B END ###\n\nYou must output only one of the following choices as your final verdict with a label:\n{pairwise_comparison_labels}\n",
+        "granularity": 4,
+        "skip_equal_pairs": true,
+        "algorithm_type": "fixed_reference_models",
+        "position_flipping": true,
+        "algorithm_config": {
+            "reference_models": [
+                "google/gemini-2.5-flash-preview-05-20"
+            ]
+        }
+    },
+    "reps": 1
+}

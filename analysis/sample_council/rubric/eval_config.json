@@ -1,0 +1,21 @@
+{
+    "type": "direct_assessment",
+    "exclude_self_grading": false,
+    "cot_enabled": false,
+    "temperature": 0.0,
+    "config": {
+        "prompt_template": "We would like to evaluate the quality of the response to a user prompt.\n\n### USER PROMPT START ###\n{user_prompt}\n### USER PROMPT END ###\n\n### RESPONSE START ###\n{response}\n### RESPONSE END ###\n\nPlease evaluate the quality of the response based on the following criteria:\n\n{criteria_verbalized}\n\nOptions:\n\n{likert_scale_verbalized}\n",
+        "rubric": [
+            {
+                "name": "Coherence",
+                "statement": "The response is coherent to the user prompt."
+            },
+            {
+                "name": "Relevance",
+                "statement": "The response is relevant to the user prompt."
+            }
+        ],
+        "prebuilt_likert_scale": 5
+    },
+    "reps": 1
+}

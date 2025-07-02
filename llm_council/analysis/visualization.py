@@ -66,6 +66,7 @@ def plot_heatmap(
     figsize: tuple[int, int] = (20, 16),
     fmt: str = ".2f",
     font_size: int = 18,
+    title: str = None,
 ):
     """Plots a heatmap of the data. Saves the plot to a file if outfile is provided."""
     # Change font size globally.
@@ -98,7 +99,10 @@ def plot_heatmap(
         vmax=vmax,
         center=center,
     )
-    plt.title("")
+    if title:
+        plt.title(title)
+    else:
+        plt.title("")
     plt.setp(plt.xticks()[1], rotation=45, ha="right")
     plt.ylabel(ylabel)
     plt.xlabel(xlabel)
@@ -174,7 +178,7 @@ def plot_arena_hard_elo_stats(stats, title, outfile, show=False):
 def get_grouped_scores(judging_df, eval_config):
     """Groups the judging DataFrame by model and computes aggregated scores for each criterion."""
 
-    criteria_names = [c.name for c in eval_config.config.rubric]
+    criteria_names = [c.name for c in eval_config.config.rubric] + ["Overall"]
     # Build aggregation functions for all criteria
     agg_funcs = {name: ["mean", list, "std"] for name in criteria_names}
     grouped = judging_df.groupby("model_being_judged").agg(agg_funcs)
@@ -183,22 +187,22 @@ def get_grouped_scores(judging_df, eval_config):
         f"{col[0]}{'' if col[1]=='mean' else '__'+col[1]}" for col in grouped.columns
     ]
 
-    # Compute Overall and Overall__std
-    def overall(row):
-        return sum(row[name] for name in criteria_names) / len(criteria_names)
+    # # Compute Overall and Overall__std
+    # # def overall(row):
+    # #     return sum(row[name] for name in criteria_names) / len(criteria_names)
 
-    def overall_raw(row):
-        # Zip the raw lists and average per judge
-        return [
-            sum(vals) / len(vals)
-            for vals in zip(*(row[f"{name}__list"] for name in criteria_names))
-        ]
+    # # def overall_raw(row):
+    # #     # Zip the raw lists and average per judge
+    # #     return [
+    # #         sum(vals) / len(vals)
+    # #         for vals in zip(*(row[f"{name}__list"] for name in criteria_names))
+    # #     ]
 
-    grouped["Overall"] = grouped.apply(overall, axis=1)
-    grouped["Overall__raw"] = grouped.apply(overall_raw, axis=1)
-    grouped["Overall__std"] = grouped["Overall__raw"].apply(
-        lambda x: pd.Series(x).std()
-    )
+    # # grouped["Overall"] = grouped.apply(overall, axis=1)
+    # # grouped["Overall__raw"] = grouped.apply(overall_raw, axis=1)
+    # # grouped["Overall__std"] = grouped["Overall__raw"].apply(
+    #     lambda x: pd.Series(x).std()
+    # )
 
     # Add family column
     grouped = grouped.reset_index()

@@ -36,7 +36,7 @@ config:
     {pairwise_comparison_labels}
 
     '
-  granularity: 5
+  granularity: 4
   skip_equal_pairs: true
   algorithm_type: fixed_reference_models
   position_flipping: true
