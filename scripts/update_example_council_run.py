@@ -5,8 +5,8 @@ python scripts/update_example_council_run.py --eval_type pairwise
 python scripts/update_example_council_run.py --eval_type rubric
 """
 
-from llm_council.council import LanguageModelCouncil
-from llm_council.judging import PRESET_EVAL_CONFIGS
+from lm_council.council import LanguageModelCouncil
+from lm_council.judging import PRESET_EVAL_CONFIGS
 from dotenv import load_dotenv
 import asyncio
 import argparse

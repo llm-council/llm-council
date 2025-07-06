@@ -165,7 +165,7 @@ def sample_combinations(items, choose, instances):
 def sample_llm_council_members(llm_council_members, k, n):
     """
     Generates a list of n instances, each being a random sample of size k
-    from llm_council_members with replacement.
+    from lm_council_members with replacement.
 
     Parameters:
     llm_council_members (list): The list of council members to sample from.

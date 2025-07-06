@@ -2,15 +2,15 @@ import numpy as np
 from sklearn.metrics import cohen_kappa_score
 import pandas as pd
 from collections import defaultdict
-from llm_council.constants import (
+from lm_council.constants import (
     MAJOR_A_WIN,
     MINOR_A_WIN,
     MINOR_B_WIN,
     MAJOR_B_WIN,
     TIE,
 )
-from llm_council.analysis.visualization import sorted_dict_of_dict
-from llm_council.analysis.pairwise.pairwise_utils import get_council_choice
+from lm_council.analysis.visualization import sorted_dict_of_dict
+from lm_council.analysis.pairwise.pairwise_utils import get_council_choice
 
 
 AGREEMENT_METHODS = ["cohen_kappa", "exact", "sidewise", "sidewise_cohen_kappa"]

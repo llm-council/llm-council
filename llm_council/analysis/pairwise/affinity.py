@@ -1,12 +1,12 @@
-from llm_council.analysis.pairwise.separability import (
+from lm_council.analysis.pairwise.separability import (
     compute_mle_elo,
     get_win_rate,
     filter_ratings_by_allowlist,
 )
-from llm_council.analysis.pairwise.pairwise_utils import get_council_choice
+from lm_council.analysis.pairwise.pairwise_utils import get_council_choice
 import pandas as pd
 from collections import defaultdict
-from llm_council.analysis.visualization import sorted_dict_of_dict
+from lm_council.analysis.visualization import sorted_dict_of_dict
 
 
 def get_affinity_df(

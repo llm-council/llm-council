@@ -1,7 +1,7 @@
 from typing import List, Literal, Union
 from pydantic import BaseModel, Field, create_model
 from typing import Type
-from llm_council.judging.prompt_builder import DIRECT_ASSESSMENT_JUDGING_BASE_TEMPLATE
+from lm_council.judging.prompt_builder import DIRECT_ASSESSMENT_JUDGING_BASE_TEMPLATE
 import json
 
 

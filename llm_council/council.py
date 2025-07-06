@@ -2,39 +2,39 @@ import pandas as pd
 import requests
 import os
 import json
-from llm_council.judging.config import EvaluationConfig
-from llm_council.judging import PRESET_EVAL_CONFIGS
-from llm_council.structured_outputs import create_dynamic_schema
+from lm_council.judging.config import EvaluationConfig
+from lm_council.judging import PRESET_EVAL_CONFIGS
+from lm_council.structured_outputs import create_dynamic_schema
 import tqdm.asyncio
 import random
-from llm_council.judging.prompt_builder import (
+from lm_council.judging.prompt_builder import (
     LIKERT_PREBUILT_MAP,
     check_prompt_template_contains_all_placeholders,
 )
-from llm_council.structured_outputs import (
+from lm_council.structured_outputs import (
     PAIRWISE_COMPARISON_LABEL_MAP,
     get_pairwise_comparison_schema,
 )
 from openai import AsyncOpenAI
 import re
-from llm_council.analysis.pairwise.bradley_terry import bradley_terry_analysis
-from llm_council.analysis.visualization import plot_heatmap
-from llm_council.analysis.visualization import (
+from lm_council.analysis.pairwise.bradley_terry import bradley_terry_analysis
+from lm_council.analysis.visualization import plot_heatmap
+from lm_council.analysis.visualization import (
     plot_arena_hard_elo_stats,
     plot_direct_assessment_charts,
 )
-from llm_council.analysis.pairwise.separability import (
+from lm_council.analysis.pairwise.separability import (
     analyze_rankings_separability_polarization,
 )
 import aiohttp
 from aiolimiter import AsyncLimiter
 import instructor
-from llm_council.analysis.pairwise.explicit_win_rate import get_explicit_win_rates
-from llm_council.analysis.pairwise.agreement import get_judge_agreement_map
-from llm_council.analysis.rubric.agreement import get_judge_agreement
-from llm_council.analysis.rubric.affinity import get_affinity_matrices
-from llm_council.analysis.pairwise.affinity import get_affinity_df
-from llm_council.analysis.pairwise.pairwise_utils import get_reference_llm
+from lm_council.analysis.pairwise.explicit_win_rate import get_explicit_win_rates
+from lm_council.analysis.pairwise.agreement import get_judge_agreement_map
+from lm_council.analysis.rubric.agreement import get_judge_agreement
+from lm_council.analysis.rubric.affinity import get_affinity_matrices
+from lm_council.analysis.pairwise.affinity import get_affinity_df
+from lm_council.analysis.pairwise.pairwise_utils import get_reference_llm
 import seaborn as sns
 from datasets import Dataset, DatasetDict, Features, Value
 from huggingface_hub import HfApi, HfFolder

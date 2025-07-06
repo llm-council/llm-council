@@ -1,0 +1,41 @@
+type: direct_assessment
+exclude_self_grading: false
+cot_enabled: false
+temperature: 0.0
+config:
+  prompt_template: 'We would like to evaluate the quality of the response to a user prompt.
+
+
+    ### USER PROMPT START ###
+
+    {user_prompt}
+
+    ### USER PROMPT END ###
+
+
+    ### RESPONSE START ###
+
+    {response}
+
+    ### RESPONSE END ###
+
+
+    Please evaluate the quality of the response based on the following criteria:
+
+
+    {criteria_verbalized}
+
+
+    Options:
+
+
+    {likert_scale_verbalized}
+
+    '
+  rubric:
+  - name: Coherence
+    statement: The response is coherent to the user prompt.
+  - name: Relevance
+    statement: The response is relevant to the user prompt.
+  prebuilt_likert_scale: 5
+reps: 1

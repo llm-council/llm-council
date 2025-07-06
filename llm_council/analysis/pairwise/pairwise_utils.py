@@ -1,5 +1,5 @@
 import pandas as pd
-from llm_council.constants import (
+from lm_council.constants import (
     MAJOR_A_WIN,
     MINOR_A_WIN,
     MINOR_B_WIN,

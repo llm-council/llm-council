@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from llm_council.analysis.visualization import plot_heatmap
+from lm_council.analysis.visualization import plot_heatmap
 
 
 def get_judge_agreement(judging_df, eval_config):

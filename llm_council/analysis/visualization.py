@@ -1,7 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from llm_council.constants import FAMILY_COLORS
+from lm_council.constants import FAMILY_COLORS
 
 
 def sorted_dict_of_dict(data):
