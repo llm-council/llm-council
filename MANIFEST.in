@@ -1,0 +1,5 @@
+include README.md
+include LICENSE
+recursive-include lm_council *.yaml
+recursive-include lm_council *.yml
+recursive-include lm_council *.json
