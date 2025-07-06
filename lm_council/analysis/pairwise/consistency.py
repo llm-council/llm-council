@@ -1,15 +1,11 @@
-import pandas as pd
 from collections import defaultdict
-from lm_council.constants import (
-    MAJOR_A_WIN,
-    MINOR_A_WIN,
-    MINOR_B_WIN,
-    MAJOR_B_WIN,
-    TIE,
-)
+
+import numpy as np
+import pandas as pd
+
 from lm_council.analysis.pairwise.agreement import get_side
 from lm_council.analysis.pairwise.pairwise_utils import get_council_choice
-import numpy as np
+from lm_council.constants import MAJOR_A_WIN, MAJOR_B_WIN, MINOR_A_WIN, MINOR_B_WIN, TIE
 
 
 def consistency_with_sidewise_tolerance_fn(pairwise_choice, position_reversed_choice):

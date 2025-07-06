@@ -1,6 +1,5 @@
 import re
 
-
 DIRECT_ASSESSMENT_JUDGING_BASE_TEMPLATE = """We would like to evaluate the quality of the response.
 
 ### USER PROMPT START ###

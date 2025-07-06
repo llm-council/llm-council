@@ -1,7 +1,9 @@
-import pytest
-from lm_council import LanguageModelCouncil
-import dotenv
 import shutil
+
+import dotenv
+import pytest
+
+from lm_council import LanguageModelCouncil
 
 
 @pytest.mark.asyncio

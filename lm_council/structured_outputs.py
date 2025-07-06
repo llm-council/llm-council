@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, create_model
-from typing import Annotated, Dict, Type, Literal, get_args, get_origin
+from typing import Annotated, Dict, Literal, Type, get_args, get_origin
 
+from pydantic import BaseModel, Field, create_model
 
 PAIRWISE_COMPARISON_LABEL_MAP = {
     2: """[[A>B]]: The first response better.

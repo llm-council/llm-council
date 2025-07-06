@@ -1,17 +1,13 @@
-from collections import defaultdict
-from lm_council.constants import (
-    MAJOR_A_WIN,
-    MINOR_A_WIN,
-    MINOR_B_WIN,
-    MAJOR_B_WIN,
-    TIE,
-)
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import os
+from collections import defaultdict
+
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import pandas as pd
 from sklearn.linear_model import LinearRegression
+
 from lm_council.analysis.pairwise.pairwise_utils import get_council_choice
+from lm_council.constants import MAJOR_A_WIN, MAJOR_B_WIN, MINOR_A_WIN, MINOR_B_WIN, TIE
 
 
 def get_num_words(text):

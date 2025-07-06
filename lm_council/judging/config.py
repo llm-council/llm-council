@@ -1,8 +1,9 @@
-from typing import List, Literal, Union
-from pydantic import BaseModel, Field, create_model
-from typing import Type
-from lm_council.judging.prompt_builder import DIRECT_ASSESSMENT_JUDGING_BASE_TEMPLATE
 import json
+from typing import List, Literal, Type, Union
+
+from pydantic import BaseModel, Field, create_model
+
+from lm_council.judging.prompt_builder import DIRECT_ASSESSMENT_JUDGING_BASE_TEMPLATE
 
 
 class Criteria(BaseModel):

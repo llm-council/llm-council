@@ -1,11 +1,12 @@
-import pytest
-import pandas as pd
 from collections import defaultdict
 
+import pandas as pd
+import pytest
+
 from lm_council.analysis.pairwise.consistency import (
-    get_consistent_votes,
-    consistency_with_sidewise_tolerance_fn,
     consistency_strict_fn,
+    consistency_with_sidewise_tolerance_fn,
+    get_consistent_votes,
 )
 from lm_council.constants import MAJOR_A_WIN, MINOR_B_WIN, TIE
 

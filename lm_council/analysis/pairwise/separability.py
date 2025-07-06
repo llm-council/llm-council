@@ -1,21 +1,17 @@
-from sklearn.linear_model import LogisticRegression
 import math
-from tqdm import tqdm
-from collections import defaultdict
 import os
-import pandas as pd
-import numpy as np
-import seaborn as sns
+from collections import defaultdict
 from itertools import combinations
-from lm_council.analysis.pairwise.pairwise_utils import get_council_choice
-from lm_council.constants import (
-    MAJOR_A_WIN,
-    MINOR_A_WIN,
-    MINOR_B_WIN,
-    MAJOR_B_WIN,
-    TIE,
-)
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from sklearn.linear_model import LogisticRegression
+from tqdm import tqdm
+
 from lm_council.analysis.pairwise.agreement import get_side
+from lm_council.analysis.pairwise.pairwise_utils import get_council_choice
+from lm_council.constants import MAJOR_A_WIN, MAJOR_B_WIN, MINOR_A_WIN, MINOR_B_WIN, TIE
 
 
 def predict_win_rate(elo_ratings, SCALE=400, BASE=10, INIT_RATING=1000):

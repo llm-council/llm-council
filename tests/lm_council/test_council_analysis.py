@@ -1,5 +1,6 @@
-from lm_council.council import LanguageModelCouncil
 import dotenv
+
+from lm_council.council import LanguageModelCouncil
 
 
 def test_get_affinity():

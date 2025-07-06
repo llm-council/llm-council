@@ -1,45 +1,47 @@
+import json
+import os
+import random
+import re
+
+import aiohttp
+import instructor
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import requests
-import os
-import json
-from lm_council.judging.config import EvaluationConfig
-from lm_council.judging import PRESET_EVAL_CONFIGS
-from lm_council.structured_outputs import create_dynamic_schema
+import seaborn as sns
 import tqdm.asyncio
-import random
+from aiolimiter import AsyncLimiter
+from datasets import Dataset, DatasetDict, Features, Value
+from huggingface_hub import HfApi, HfFolder
+from openai import AsyncOpenAI
+
+from lm_council.analysis.pairwise.affinity import get_affinity_df
+from lm_council.analysis.pairwise.agreement import get_judge_agreement_map
+from lm_council.analysis.pairwise.bradley_terry import bradley_terry_analysis
+from lm_council.analysis.pairwise.explicit_win_rate import get_explicit_win_rates
+from lm_council.analysis.pairwise.pairwise_utils import get_reference_llm
+from lm_council.analysis.pairwise.separability import (
+    analyze_rankings_separability_polarization,
+)
+from lm_council.analysis.rubric.affinity import get_affinity_matrices
+from lm_council.analysis.rubric.agreement import get_judge_agreement
+from lm_council.analysis.visualization import (
+    plot_arena_hard_elo_stats,
+    plot_direct_assessment_charts,
+    plot_heatmap,
+)
+from lm_council.judging import PRESET_EVAL_CONFIGS
+from lm_council.judging.config import EvaluationConfig
 from lm_council.judging.prompt_builder import (
     LIKERT_PREBUILT_MAP,
     check_prompt_template_contains_all_placeholders,
 )
 from lm_council.structured_outputs import (
     PAIRWISE_COMPARISON_LABEL_MAP,
+    create_dynamic_schema,
     get_pairwise_comparison_schema,
 )
-from openai import AsyncOpenAI
-import re
-from lm_council.analysis.pairwise.bradley_terry import bradley_terry_analysis
-from lm_council.analysis.visualization import plot_heatmap
-from lm_council.analysis.visualization import (
-    plot_arena_hard_elo_stats,
-    plot_direct_assessment_charts,
-)
-from lm_council.analysis.pairwise.separability import (
-    analyze_rankings_separability_polarization,
-)
-import aiohttp
-from aiolimiter import AsyncLimiter
-import instructor
-from lm_council.analysis.pairwise.explicit_win_rate import get_explicit_win_rates
-from lm_council.analysis.pairwise.agreement import get_judge_agreement_map
-from lm_council.analysis.rubric.agreement import get_judge_agreement
-from lm_council.analysis.rubric.affinity import get_affinity_matrices
-from lm_council.analysis.pairwise.affinity import get_affinity_df
-from lm_council.analysis.pairwise.pairwise_utils import get_reference_llm
-import seaborn as sns
-from datasets import Dataset, DatasetDict, Features, Value
-from huggingface_hub import HfApi, HfFolder
-import numpy as np
-import matplotlib.pyplot as plt
 
 
 def process_pairwise_choice(raw_pairwise_choice: str) -> str:

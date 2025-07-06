@@ -1,16 +1,12 @@
-import numpy as np
-from lm_council.analysis.visualization import sorted_dict_of_dict
-from lm_council.constants import (
-    MAJOR_A_WIN,
-    MINOR_A_WIN,
-    MINOR_B_WIN,
-    MAJOR_B_WIN,
-    TIE,
-)
-import choix
 import os
 from collections import defaultdict
+
+import choix
+import numpy as np
 import pandas as pd
+
+from lm_council.analysis.visualization import sorted_dict_of_dict
+from lm_council.constants import MAJOR_A_WIN, MAJOR_B_WIN, MINOR_A_WIN, MINOR_B_WIN, TIE
 
 
 def get_choix_data(df, major_win_multiplier=3):
